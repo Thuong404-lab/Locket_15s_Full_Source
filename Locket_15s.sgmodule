@@ -1,0 +1,11 @@
+#!name=Locket 15s Photo Only - Local Review
+#!desc=Module template: upload the four JS files to your own trusted HTTPS host and replace SCRIPT_BASE_URL.
+
+[Script]
+revenuecat = type=http-response, pattern=^https:\/\/api\.revenuecat\.com\/.+\/(receipts$|subscribers\/[^/]+$), script-path=SCRIPT_BASE_URL/Locket.js, requires-body=true, max-size=-1, timeout=60
+deleteHeader = type=http-request, pattern=^https:\/\/api\.revenuecat\.com\/.+\/(receipts|subscribers), script-path=SCRIPT_BASE_URL/del_header.js, timeout=60
+locket_rc = type=http-response, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/.+, script-path=SCRIPT_BASE_URL/Locket_Unlocked_Clean.js, requires-body=true, max-size=-1, timeout=60
+locket_rc_us = type=http-request, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch, requires-body=1, max-size=0, script-path=SCRIPT_BASE_URL/Locket_rc_us.js, timeout=10
+
+[MITM]
+hostname = %APPEND% api.revenuecat.com, firebaseremoteconfig.googleapis.com

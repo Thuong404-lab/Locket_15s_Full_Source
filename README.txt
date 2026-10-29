@@ -1,0 +1,1 @@
+Includes 4 JS scripts and one module template. Replace SCRIPT_BASE_URL with your own trusted HTTPS location. Requires a compatible rewrite/MITM app and certificate. No guarantee that Locket accepts modified settings.
