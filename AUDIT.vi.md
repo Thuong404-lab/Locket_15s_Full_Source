@@ -1,5 +1,7 @@
 # Kiểm tra source Locket — 30/10/2026
 
+> Cập nhật sau lần kiểm tra ban đầu: người dùng đã chọn công khai repo. Module đã thay SCRIPT_BASE_URL bằng URL Raw của repo Thuong404-lab/Locket_15s_Full_Source, nhánh main. Chạy lại mock: 24 test, 19 đạt, 5 không đạt; mục URL HTTPS đã đạt, 5 lỗi xử lý đầu vào/header vẫn tồn tại. Phần bên dưới lưu kết quả kiểm tra ban đầu. Chưa kiểm thử trên iPhone.
+
 ## Kết luận
 
 Đủ thành phần của bộ rewrite: 4 script JavaScript và 1 module. Chưa phải bộ cài đặt sẵn dùng: module còn SCRIPT_BASE_URL và chưa kiểm thử trên iPhone. Đây không phải source ứng dụng Locket hay IPA độc lập.
