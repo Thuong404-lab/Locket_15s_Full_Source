@@ -1,5 +1,7 @@
 # Kiểm tra source Locket — 30/10/2026
 
+> v6: theo yêu cầu, tắt cờ bộ lọc và Tạo diện mạo, bỏ danh sách Goofy/Looks và override bucket/cache bộ lọc; không đổi caption/camera/thư viện/âm thanh. Người dùng báo phía nhận vẫn không có tiếng sau khi thử; chưa xác định nguyên nhân. 34/34 test mock đạt, bao gồm tắt giao diện kể cả khi phản hồi gốc bật và bảo toàn 255 caption gốc. Chưa kiểm chứng giao diện iPhone sau cập nhật. Module/Remote Config dùng v6. Các phần dưới lưu lịch sử.
+
 > v5: xóa nhóm 8 caption cá nhân theo yêu cầu, giữ nguyên nội dung và thứ tự 255 caption/10 nhóm ban đầu (checksum mock khớp baseline). 33/33 test đạt. Module/Remote Config chuyển sang v5. Các mục dưới là lịch sử thay đổi, không phải trạng thái mới nhất. Không xóa hoặc viết lại lịch sử Git.
 
 > Bản v4 mới nhất: đã sửa cả 3 lỗi mock còn lại. del_header.js tìm/gộp tên header không phân biệt hoa/thường và không sửa trực tiếp object đầu vào. Locket.js kiểm tra User-Agent, JSON, subscriber, subscriptions và entitlements trước khi sửa; phản hồi bất thường được giữ nguyên qua $done({}) đúng một lần trong test. Thêm kiểm tra đầu vào sai, header trùng và bảo toàn dữ liệu hợp lệ. **33/33 test đạt, 0 lỗi.** Module trỏ hai script đã sửa qua ?v=4; Remote Config/caption vẫn là RC v3. Các lỗi/kết quả bên dưới là lịch sử. Chưa có bằng chứng sửa được vấn đề âm thanh phía người nhận hoặc Tạo diện mạo trên thiết bị.

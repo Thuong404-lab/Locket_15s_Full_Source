@@ -65,6 +65,24 @@ test('sound and microphone configuration stays enabled', () => {
   for (const key of ['video_sound_enabled', 'microphone_enabled', 'camera_microphone_enabled']) assert.equal(entries[key], 'true', key);
 });
 
+test('Goofy/Looks and custom appearance UI are disabled even when upstream enables them', () => {
+  const { entries } = remoteConfig({ body: JSON.stringify({ state: 'UPDATE', entries: {
+    camera_filters_enabled: 'true',
+    camera_filter_config: JSON.stringify({ allows_custom_filters: true, show_filter_button: true }),
+    unrelated_sentinel: 'keep',
+  } }) });
+  for (const key of ['camera_filter', 'camera_filters_enabled', 'camera_filter_enabled', 'camera_filter_sheet_enabled']) {
+    assert.equal(entries[key], 'false', key);
+  }
+  const config = JSON.parse(entries.camera_filter_config);
+  for (const key of ['allows_custom_filters', 'show_filter_button', 'sheet_enabled', 'open_sheet_immediately']) {
+    assert.equal(config[key], false, key);
+  }
+  assert.deepEqual(config.sheet_filters, []);
+  assert.deepEqual(config.picker_filters, []);
+  assert.equal(entries.unrelated_sentinel, 'keep');
+});
+
 test('every structured Remote Config string is valid JSON', () => {
   for (const [key, value] of Object.entries(remoteConfig().entries)) {
     if (typeof value === 'string' && /^[\[{]/.test(value)) assert.doesNotThrow(() => JSON.parse(value), key);
@@ -140,7 +158,7 @@ test('request query does not prevent matching and diagnostics omit query secrets
   const logs = [];
   const result = remoteConfig({ url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch?key=mock-secret', logs });
   assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
-  assert.ok(logs.some((line) => line.includes('[Locket RC v5] response rewritten') && line.includes('captions=255')));
+  assert.ok(logs.some((line) => line.includes('[Locket RC v6] response rewritten') && line.includes('captions=255')));
   assert.ok(logs.every((line) => !line.includes('mock-secret')));
 });
 
@@ -162,7 +180,7 @@ test('cached states and malformed entries stay untouched and produce diagnostics
   ]) {
     const logs = [];
     assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body: JSON.stringify(input), logs }), {});
-    assert.ok(logs.some((line) => line.includes('[Locket RC v5] skipped:')));
+    assert.ok(logs.some((line) => line.includes('[Locket RC v6] skipped:')));
     assert.ok(logs.every((line) => !line.includes('mock-upstream-error')));
   }
 });

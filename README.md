@@ -4,7 +4,17 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
-## Bản mới nhất: v5 — xóa nhóm caption cá nhân
+## Bản mới nhất: v6 — tắt bộ lọc/Tạo diện mạo
+
+Theo yêu cầu, tắt các cờ camera_filter, camera_filters_enabled, camera_filter_enabled, camera_filter_sheet_enabled; đặt allows_custom_filters/show_filter_button/sheet_enabled/open_sheet_immediately=false và bỏ danh sách filter Goofy/Looks cùng override bucket/cache bộ lọc. Giữ nguyên caption, camera, thư viện và âm thanh. Chưa kiểm tra giao diện trên iPhone sau cập nhật.
+
+Người dùng đã thử phía nhận nhưng video vẫn không có tiếng; vấn đề âm thanh chưa được xác định nguyên nhân hoặc sửa trong bản này. **34/34 test mock đạt.**
+
+Link cập nhật: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=6
+
+Module tên `Locket 15s Photo Only - v6`, Remote Config dùng `?v=6` và log `[Locket RC v6]`. Các phiên bản dưới đây là lịch sử.
+
+## Lịch sử v5 — xóa nhóm caption cá nhân
 
 Đã xóa 8 caption cá nhân đã thêm theo yêu cầu. Giữ nguyên toàn bộ **255 caption / 10 nhóm** trước đó. Các mục v4/RC v2 bên dưới là lịch sử thay đổi. Test mock mới nhất: **33/33 đạt**.
 

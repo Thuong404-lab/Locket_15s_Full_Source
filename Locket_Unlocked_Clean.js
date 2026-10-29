@@ -2,7 +2,7 @@
 function rewriteLocketConfig() {
     function logStatus(message) {
         if (typeof console !== "undefined" && typeof console.log === "function") {
-            console.log("[Locket RC v5] " + message);
+            console.log("[Locket RC v6] " + message);
         }
     }
 
@@ -125,9 +125,14 @@ function rewriteLocketConfig() {
             catch_up: true,
             widget_looping_mode: "never"
         }),
-        camera_filter_config: JSON.stringify({"allows_custom_filters":true,"show_filter_button":true,"sheet_enabled":true,"open_sheet_immediately":true,"sheet_filters":[{"title":{"en":"Goofy"},"filter_ids":["okay_wig","influencer","looks_maxxing","toothless","bye_brows"]},{"title":{"en":"Looks"},"filter_ids":["bowling_ball","blonde_bleached","beard","bob_cut","buns","tatted","mohawk","braces","bye_brows"]},{"title":{"en":"Celebrate"},"filter_ids":["slimed","princess","disco_lights","cash_money","happy_birthday"]},{"title":{"en":"Cute"},"filter_ids":["cutesy","sticker_face","flower_crown","love_bug"]},{"title":{"en":"Costumes"},"filter_ids":["wedding","cowboy_cowgirl","giraffe","clown"]},{"title":{"en":"Holidays"},"filter_ids":["easter_bunney_cutout","easter_chick_cutout","bearded","leprechaun","lucky_face","sweet_hearts","elf_cutout","santa_cutout","frosty"]}],"picker_filters":["okay_wig","influencer","looks_maxxing","toothless","bye_brows","bowling_ball","blonde_bleached","beard","bob_cut","buns","tatted","mohawk","braces","slimed","princess","disco_lights","cash_money","happy_birthday","cutesy","sticker_face","flower_crown","love_bug","wedding","cowboy_cowgirl","giraffe","clown","easter_bunney_cutout","easter_chick_cutout","bearded","leprechaun","lucky_face","sweet_hearts","elf_cutout","santa_cutout","frosty"]}),
-        camera_filter_storage_bucket: "gs://locket-filters",
-        camera_filter_fetch_cache_max_age_seconds: "0",
+        camera_filter_config: JSON.stringify({
+            allows_custom_filters: false,
+            show_filter_button: false,
+            sheet_enabled: false,
+            open_sheet_immediately: false,
+            sheet_filters: [],
+            picker_filters: []
+        }),
         camera_roll_preview_enabled: "true",
         camera_roll_video_enabled: "false",
         camera_roll_video_upload_enabled: "false",
@@ -200,10 +205,10 @@ function rewriteLocketConfig() {
         hide_chat_button: "false",
         groups_enabled: "true",
         groups_feature_mode: "enabled",
-        camera_filter: "true",
-        camera_filters_enabled: "true",
-        camera_filter_enabled: "true",
-        camera_filter_sheet_enabled: "true",
+        camera_filter: "false",
+        camera_filters_enabled: "false",
+        camera_filter_enabled: "false",
+        camera_filter_sheet_enabled: "false",
         group_contact_invites_enabled: "true",
         groups_onboarding_accept_invite_preview_enabled: "true",
         chat_hyperlink_enabled_mode: "always_enabled",
