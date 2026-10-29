@@ -4,7 +4,15 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
-## Bản mới nhất: v4 — sửa 3 lỗi còn lại
+## Bản mới nhất: v5 — xóa nhóm caption cá nhân
+
+Đã xóa 8 caption cá nhân đã thêm theo yêu cầu. Giữ nguyên toàn bộ **255 caption / 10 nhóm** trước đó. Các mục v4/RC v2 bên dưới là lịch sử thay đổi. Test mock mới nhất: **33/33 đạt**.
+
+Link cập nhật: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=5
+
+Module tên `Locket 15s Photo Only - v5`, Remote Config dùng `?v=5` và log `[Locket RC v5]`. Script header/RevenueCat giữ bản sửa v4. Bản commit cũ vẫn lưu trong lịch sử Git.
+
+## Lịch sử v4 — sửa 3 lỗi còn lại
 
 Đã sửa xử lý tên header không phân biệt hoa/thường (gộp các bản ETag/quốc gia trùng tên), bảo vệ RevenueCat khi phản hồi lỗi hoặc thiếu subscriber/subscriptions/entitlements, và bỏ qua an toàn khi thiếu User-Agent. Đồng thời xử lý JSON sai, root null/array, header thiếu và User-Agent không phải chuỗi. Không tạo cấu trúc subscriber giả khi đầu vào thiếu. Luồng phản hồi hợp lệ và dữ liệu cấu hình/caption giữ như bản trước.
 
@@ -15,20 +23,6 @@ Link cập nhật module v4:
 https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=4
 
 Hai script RevenueCat/header dùng URL `?v=4` để phân biệt bản tải mới; Remote Config/caption vẫn dùng RC v3 và `?v=3`. Tên module là `Locket 15s Photo Only - v4`.
-
-## Cập nhật RC v3
-
-Thêm nhóm **✨ Caption của bạn** ở đầu `overlay_items`, gồm 8 câu theo đúng thứ tự yêu cầu: Nguyễn Tiến Thương; Trầm Lâm Trúc Ly; Nguyễn Hoàng Hảo; Tôi đẹp trai quá; đẹp gái quá; Yeu oi; Khỉ già vô tâm; Trúc Ly xinh gái.
-
-Tổng dữ liệu hiện tại: **263 caption / 11 nhóm**. Test xác nhận 255 caption trong 10 nhóm cũ giữ nguyên mọi trường và thứ tự, không trùng ID với nhóm mới. Thứ tự này là thứ tự trong cấu hình; chưa xác nhận giao diện Locket 2.70.0 hiển thị hoặc sử dụng được.
-
-Link tải bản mới:
-
-https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=3
-
-Module tên `Locket 15s Photo Only - RC v3`, URL script Remote Config có `?v=3`, log có tiền tố `[Locket RC v3]` và đếm caption theo dữ liệu xuất ra. Mock mới nhất: **29 test, 26 đạt, 3 lỗi cũ ở header/RevenueCat vẫn còn**. Các phần RC v2 bên dưới lưu mô tả đợt sửa trước.
-
-Người dùng tiếp tục báo chưa thấy caption, bộ lọc hiện giao diện, nút **Tạo diện mạo** không có thông báo rõ ràng, và video có tiếng trong lịch sử máy gửi nhưng người nhận không nghe được. Chưa có log hoặc file video phía nhận để xác định nguyên nhân. Source bật `allows_custom_filters` và danh sách `filter_ids`; bật nút không xác nhận dịch vụ tạo bộ lọc hoạt động. Các cờ âm thanh không chứng minh bản upload có track audio hoặc người nhận phát có tiếng. Đợt RC v3 không thay bộ lọc, âm thanh, upload hay RevenueCat; cần kiểm tra phía nhận trong ứng dụng và file nhận thực tế trước khi sửa các phần này.
 
 Module tải script từ repo GitHub công khai này. Link tải module:
 

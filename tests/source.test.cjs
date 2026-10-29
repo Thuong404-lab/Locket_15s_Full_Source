@@ -105,17 +105,13 @@ test('all six requested captions retain their emoji', () => {
   }
 });
 
-test('eight new captions come first in requested order and all original sections remain intact', () => {
+test('personal caption group is removed and all original sections remain intact', () => {
   const sections = JSON.parse(remoteConfig().entries.overlay_items);
-  assert.equal(sections.length, 11);
-  assert.deepEqual(sections[0].items.map((item) => item.caption.text), [
-    'Nguyễn Tiến Thương', 'Trầm Lâm Trúc Ly', 'Nguyễn Hoàng Hảo', 'Tôi đẹp trai quá',
-    'đẹp gái quá', 'Yeu oi', 'Khỉ già vô tâm', 'Trúc Ly xinh gái',
-  ]);
-  const originalSections = sections.slice(1);
-  assert.equal(originalSections.flatMap((section) => section.items).length, 255);
+  assert.equal(sections.length, 10);
+  assert.equal(sections.flatMap((section) => section.items).length, 255);
+  assert.ok(sections.flatMap((section) => section.items).every((item) => !item.overlay_id.startsWith('caption:priority_')));
   // Digest captured from RC v2 before the addition: preserves every old field and its order.
-  assert.equal(createHash('sha256').update(JSON.stringify(originalSections)).digest('hex'),
+  assert.equal(createHash('sha256').update(JSON.stringify(sections)).digest('hex'),
     'ba71a054892e40d389f7f17cd5b761e3227166fb1d94e668f9e8c3de16b1e040');
 });
 
@@ -135,7 +131,7 @@ test('matching project works with SDK user agent or missing headers', () => {
   for (const headers of [{ 'User-Agent': 'FirebaseRemoteConfig/12.0' }, {}]) {
     const result = remoteConfig({ headers, body: '{"state":"UPDATE","entries":{"camera":"{\\"max_duration\\":3}"}}' });
     assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
-    assert.equal(JSON.parse(result.entries.overlay_items).flatMap((section) => section.items).length, 263);
+    assert.equal(JSON.parse(result.entries.overlay_items).flatMap((section) => section.items).length, 255);
     assert.equal(result.entries.video_sound_enabled, 'true');
   }
 });
@@ -144,7 +140,7 @@ test('request query does not prevent matching and diagnostics omit query secrets
   const logs = [];
   const result = remoteConfig({ url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch?key=mock-secret', logs });
   assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
-  assert.ok(logs.some((line) => line.includes('[Locket RC v3] response rewritten') && line.includes('captions=263')));
+  assert.ok(logs.some((line) => line.includes('[Locket RC v5] response rewritten') && line.includes('captions=255')));
   assert.ok(logs.every((line) => !line.includes('mock-secret')));
 });
 
@@ -166,7 +162,7 @@ test('cached states and malformed entries stay untouched and produce diagnostics
   ]) {
     const logs = [];
     assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body: JSON.stringify(input), logs }), {});
-    assert.ok(logs.some((line) => line.includes('[Locket RC v3] skipped:')));
+    assert.ok(logs.some((line) => line.includes('[Locket RC v5] skipped:')));
     assert.ok(logs.every((line) => !line.includes('mock-upstream-error')));
   }
 });

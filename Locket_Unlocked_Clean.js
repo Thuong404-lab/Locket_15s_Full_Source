@@ -2,7 +2,7 @@
 function rewriteLocketConfig() {
     function logStatus(message) {
         if (typeof console !== "undefined" && typeof console.log === "function") {
-            console.log("[Locket RC v3] " + message);
+            console.log("[Locket RC v5] " + message);
         }
     }
 
@@ -350,19 +350,6 @@ function rewriteLocketConfig() {
             "good_morning", "goodnight", "ootd", "miss_you", "custom", "halloween_2026"
         ]),
         overlay_items: JSON.stringify([
-            {
-                section: "✨ Caption của bạn",
-                items: [
-                    { overlay_id: "caption:priority_nguyen_tien_thuong", source: "remote", caption: { background: { colors: ["#1D4ED8", "#60A5FA"] }, icon: { data: "👑", type: "emoji" }, max_lines: 1, text: "Nguyễn Tiến Thương", text_color: "#FFFFFF", type: "static_content" } },
-                    { overlay_id: "caption:priority_tram_lam_truc_ly", source: "remote", caption: { background: { colors: ["#BE185D", "#F9A8D4"] }, icon: { data: "🌷", type: "emoji" }, max_lines: 1, text: "Trầm Lâm Trúc Ly", text_color: "#FFFFFF", type: "static_content" } },
-                    { overlay_id: "caption:priority_nguyen_hoang_hao", source: "remote", caption: { background: { colors: ["#166534", "#4ADE80"] }, icon: { data: "😎", type: "emoji" }, max_lines: 1, text: "Nguyễn Hoàng Hảo", text_color: "#FFFFFF", type: "static_content" } },
-                    { overlay_id: "caption:priority_toi_dep_trai_qua", source: "remote", caption: { background: { colors: ["#7C2D12", "#F97316"] }, icon: { data: "🪞", type: "emoji" }, max_lines: 1, text: "Tôi đẹp trai quá", text_color: "#FFFFFF", type: "static_content" } },
-                    { overlay_id: "caption:priority_dep_gai_qua", source: "remote", caption: { background: { colors: ["#9D174D", "#F472B6"] }, icon: { data: "💅", type: "emoji" }, max_lines: 1, text: "đẹp gái quá", text_color: "#FFFFFF", type: "static_content" } },
-                    { overlay_id: "caption:priority_yeu_oi", source: "remote", caption: { background: { colors: ["#B91C1C", "#FB7185"] }, icon: { data: "💕", type: "emoji" }, max_lines: 1, text: "Yeu oi", text_color: "#FFFFFF", type: "static_content" } },
-                    { overlay_id: "caption:priority_khi_gia_vo_tam", source: "remote", caption: { background: { colors: ["#713F12", "#FBBF24"] }, icon: { data: "🐒", type: "emoji" }, max_lines: 1, text: "Khỉ già vô tâm", text_color: "#FFFFFF", type: "static_content" } },
-                    { overlay_id: "caption:priority_truc_ly_xinh_gai", source: "remote", caption: { background: { colors: ["#6D28D9", "#C4B5FD"] }, icon: { data: "🎀", type: "emoji" }, max_lines: 1, text: "Trúc Ly xinh gái", text_color: "#FFFFFF", type: "static_content" } },
-                ]
-            },
             {
                 section: "🎨 General",
                 items: [

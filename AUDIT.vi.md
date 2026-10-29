@@ -1,5 +1,7 @@
 # Kiểm tra source Locket — 30/10/2026
 
+> v5: xóa nhóm 8 caption cá nhân theo yêu cầu, giữ nguyên nội dung và thứ tự 255 caption/10 nhóm ban đầu (checksum mock khớp baseline). 33/33 test đạt. Module/Remote Config chuyển sang v5. Các mục dưới là lịch sử thay đổi, không phải trạng thái mới nhất. Không xóa hoặc viết lại lịch sử Git.
+
 > Bản v4 mới nhất: đã sửa cả 3 lỗi mock còn lại. del_header.js tìm/gộp tên header không phân biệt hoa/thường và không sửa trực tiếp object đầu vào. Locket.js kiểm tra User-Agent, JSON, subscriber, subscriptions và entitlements trước khi sửa; phản hồi bất thường được giữ nguyên qua $done({}) đúng một lần trong test. Thêm kiểm tra đầu vào sai, header trùng và bảo toàn dữ liệu hợp lệ. **33/33 test đạt, 0 lỗi.** Module trỏ hai script đã sửa qua ?v=4; Remote Config/caption vẫn là RC v3. Các lỗi/kết quả bên dưới là lịch sử. Chưa có bằng chứng sửa được vấn đề âm thanh phía người nhận hoặc Tạo diện mạo trên thiết bị.
 
 > Đợt RC v3: thêm 8 caption cá nhân theo thứ tự người dùng yêu cầu vào nhóm đầu. Tổng 263 caption / 11 nhóm, không trùng ID. Test checksum xác nhận toàn bộ 10 nhóm/255 caption của RC v2 giữ nguyên nội dung và thứ tự. Mock: 29 test, 26 đạt, 3 lỗi cũ header/RevenueCat. Người dùng báo video có tiếng trong lịch sử máy gửi nhưng phía nhận không nghe, bộ lọc hiện giao diện nhưng chưa dùng được Tạo diện mạo. Chưa có log/file phía nhận; chưa kết luận nguyên nhân hoặc sửa âm thanh/bộ lọc. Chưa xác nhận caption mới trên iPhone. Log phiên bản mới là [Locket RC v3]; xem README.md.
