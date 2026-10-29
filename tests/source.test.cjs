@@ -9,11 +9,12 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const scripts = ['Locket.js', 'del_header.js', 'Locket_Unlocked_Clean.js', 'Locket_rc_us.js'];
 
 // Run only local source with mocked proxy globals. No network or device access.
-function execute(file, { headers = { 'User-Agent': 'Locket/1.0' }, body = '{"entries":{}}', requestBody, method = 'POST' } = {}) {
+function execute(file, { headers = { 'User-Agent': 'Locket/1.0' }, body = '{"state":"UPDATE","entries":{}}', requestBody, method = 'POST', url = 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch', logs = [] } = {}) {
   const completions = [];
   vm.runInNewContext(read(file), {
-    $request: { headers, method, body: requestBody },
+    $request: { headers, method, body: requestBody, url },
     $response: { body },
+    console: { log: (message) => logs.push(message) },
     $done: (value) => completions.push(JSON.parse(JSON.stringify(value))),
   }, { timeout: 1000, filename: file });
   assert.equal(completions.length, 1, 'Every invocation must complete exactly once');
@@ -30,9 +31,9 @@ for (const file of scripts) {
 
 test('module references all four existing scripts and declares only its two MITM hosts', () => {
   const moduleText = read('Locket_15s.sgmodule');
-  const references = [...moduleText.matchAll(/script-path=([^,\s]+)/g)].map((m) => m[1].split('/').pop());
+  const references = [...moduleText.matchAll(/script-path=([^,\s]+)/g)].map((m) => new URL(m[1]).pathname.split('/').pop());
   assert.deepEqual(references.sort(), [...scripts].sort());
-  const hosts = moduleText.match(/^hostname\s*=\s*%APPEND%\s*(.+)$/m)[1].split(',').map((h) => h.trim());
+  const hosts = moduleText.match(/^hostname\s*=\s*(.+)$/m)[1].split(',').map((h) => h.trim());
   assert.deepEqual(hosts, ['api.revenuecat.com', 'firebaseremoteconfig.googleapis.com']);
 });
 
@@ -110,9 +111,49 @@ test('unmentioned entries and top-level response metadata survive', () => {
   assert.equal(result.entries.unrelated_sentinel, 'keep');
 });
 
-test('non-Locket JSON response is unchanged', () => {
+test('other Firebase projects pass through even with a Locket user agent', () => {
   const input = { entries: { camera: 'original' }, state: 'NO_CHANGE' };
-  assert.deepEqual(remoteConfig({ headers: { 'User-Agent': 'OtherApp' }, body: JSON.stringify(input) }), input);
+  assert.deepEqual(execute('Locket_Unlocked_Clean.js', { url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/other-app/namespaces/firebase:fetch', body: JSON.stringify(input) }), {});
+});
+
+test('matching project works with SDK user agent or missing headers', () => {
+  for (const headers of [{ 'User-Agent': 'FirebaseRemoteConfig/12.0' }, {}]) {
+    const result = remoteConfig({ headers, body: '{"state":"UPDATE","entries":{"camera":"{\\"max_duration\\":3}"}}' });
+    assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
+    assert.equal(JSON.parse(result.entries.overlay_items).flatMap((section) => section.items).length, 255);
+    assert.equal(result.entries.video_sound_enabled, 'true');
+  }
+});
+
+test('request query does not prevent matching and diagnostics omit query secrets', () => {
+  const logs = [];
+  const result = remoteConfig({ url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch?key=mock-secret', logs });
+  assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
+  assert.ok(logs.some((line) => line.includes('[Locket RC v2] response rewritten')));
+  assert.ok(logs.every((line) => !line.includes('mock-secret')));
+});
+
+test('wrong host, project prefix, namespace, or endpoint must pass through', () => {
+  for (const url of [
+    'https://firebaseremoteconfig.googleapis.com.evil.test/v1/projects/locket-4252a/namespaces/firebase:fetch',
+    'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a-other/namespaces/firebase:fetch',
+    'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/other:fetch',
+    'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetchOther',
+  ]) assert.deepEqual(execute('Locket_Unlocked_Clean.js', { url }), {});
+});
+
+test('cached states and malformed entries stay untouched and produce diagnostics', () => {
+  for (const input of [
+    { state: 'NO_CHANGE' }, { state: 'EMPTY_CONFIG' }, { state: 'NO_TEMPLATE' },
+    { error: { message: 'mock-upstream-error' } }, { state: 'UPDATE', entries: [] },
+    { state: 'UPDATE', entries: null }, { state: 'UPDATE', entries: 'invalid' },
+    { entries: {} }, [],
+  ]) {
+    const logs = [];
+    assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body: JSON.stringify(input), logs }), {});
+    assert.ok(logs.some((line) => line.includes('[Locket RC v2] skipped:')));
+    assert.ok(logs.every((line) => !line.includes('mock-upstream-error')));
+  }
 });
 
 test('lowercase user-agent header is recognized', () => {
@@ -120,7 +161,7 @@ test('lowercase user-agent header is recognized', () => {
 });
 
 test('malformed streak JSON does not block other camera changes', () => {
-  const result = remoteConfig({ body: '{"entries":{"streak_config":"broken"}}' });
+  const result = remoteConfig({ body: '{"state":"UPDATE","entries":{"streak_config":"broken"}}' });
   assert.equal(result.entries.streak_config, 'broken');
   assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
 });

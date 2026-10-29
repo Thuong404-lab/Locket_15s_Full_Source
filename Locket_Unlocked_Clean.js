@@ -1,10 +1,36 @@
 // Author: Nguyen Tien Thuong
-var ua = $request.headers["User-Agent"] || $request.headers["user-agent"] || "";
-var obj = JSON.parse($response.body);
+function rewriteLocketConfig() {
+    function logStatus(message) {
+        if (typeof console !== "undefined" && typeof console.log === "function") {
+            console.log("[Locket RC v2] " + message);
+        }
+    }
 
-if (/locket/i.test(ua)) {
+    // Scope by project and fetch endpoint, not by the app/SDK User-Agent.
+    var target = /^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch(?:\?|$)/;
+    if (!target.test($request.url || "")) {
+        logStatus("skipped: request URL outside configured project");
+        return {};
+    }
+
+    var obj;
+    try {
+        obj = JSON.parse($response.body);
+    } catch (e) {
+        logStatus("skipped: response is not JSON");
+        return {};
+    }
+    if (!obj || typeof obj !== "object" || Array.isArray(obj) || obj.error) {
+        logStatus("skipped: invalid response or upstream error");
+        return {};
+    }
+    // NO_CHANGE has no complete config. Turning it into UPDATE could discard
+    // unrelated settings from the app's cache. Leave it intact and report it.
+    if (obj.state !== "UPDATE" || !obj.entries || typeof obj.entries !== "object" || Array.isArray(obj.entries)) {
+        logStatus("skipped: full UPDATE with entries required (possibly cached response)");
+        return {};
+    }
     obj.Attention = "Chúc mừng bạn! Vui lòng không sử dụng chúng dưới mục đích thương mại!";
-    obj.entries = obj.entries || {};
 
     Object.assign(obj.entries, {
         feature_gates: JSON.stringify({
@@ -659,6 +685,8 @@ if (/locket/i.test(ua)) {
         show_no_friends_bottom_sheet: "true",
         share_history_config: JSON.stringify({ prompt_enabled: true, fetching_enabled: true })
     });
+    logStatus("response rewritten: camera=15s, gallery-video=false, sound=true, captions=255; device behavior unverified");
+    return { body: JSON.stringify(obj) };
 }
 
-$done({ body: JSON.stringify(obj) });
+$done(rewriteLocketConfig());

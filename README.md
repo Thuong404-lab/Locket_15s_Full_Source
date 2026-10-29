@@ -19,3 +19,22 @@ node --test tests/source.test.cjs
 ```
 
 Xem `AUDIT.vi.md` để biết kết quả kiểm tra và các lỗi còn tồn tại. Script RevenueCat sửa dữ liệu phản hồi, không tạo giao dịch mua thật.
+
+## Trạng thái kiểm thử trên thiết bị
+
+Người dùng báo cáo với Locket 2.70.0: chỉ quay 3 giây, không thấy caption mẫu, chưa có âm thanh và trở về mặc định khi tắt Shadowrocket. Đây là kết quả của bản trước RC v2; chưa có kết quả trên thiết bị cho RC v2. Các cờ trong source và mock không chứng minh app hỗ trợ hoặc áp dụng chúng.
+
+RC v2 sửa điều kiện bỏ qua toàn bộ Remote Config khi User-Agent không chứa “Locket”. Script nhận diện theo URL project `locket-4252a` và endpoint `firebase:fetch`, bảo vệ JSON lỗi và chỉ sửa phản hồi đầy đủ `state=UPDATE` với object `entries`. Giữ nguyên dữ liệu khi nhận `NO_CHANGE` hoặc lỗi, tránh thay cache bằng một bộ cấu hình thiếu. Bản module bỏ `%APPEND%` vì giao diện thiết bị hiển thị nguyên chuỗi này trong hostname. Không thay các giá trị tính năng, caption hay script RevenueCat trong lần sửa này.
+
+Cập nhật/nhập lại module từ link Raw ở trên và bảo đảm script Remote Config đã được tải lại; URL của nó có hậu tố `?v=2`. Chỉ giữ một bản cấu hình/module Locket đang hoạt động để tránh bản cũ ghi đè. Không tự xóa dữ liệu hoặc cài lại Locket để ép tải cấu hình.
+
+Log chẩn đoán RC v2 dùng tiền tố `[Locket RC v2]`:
+
+- `response rewritten`: đã sửa body ở proxy; chưa chứng minh app áp dụng hoặc server chấp nhận.
+- `skipped: full UPDATE ...`: không có phản hồi cấu hình đầy đủ để sửa, có thể là `NO_CHANGE` hoặc cấu trúc khác.
+- `skipped: response is not JSON` hoặc `invalid response or upstream error`: giữ nguyên phản hồi bất thường.
+- `skipped: request URL outside configured project`: URL không khớp project/endpoint đã cấu hình.
+
+Không có dòng log chưa đủ xác định nguyên nhân: cần kiểm tra cấu hình đang chọn, HTTPS/MITM, script đã tải và có request Firebase khớp rule hay chưa. Chỉ chia sẻ dòng trạng thái/lỗi cần thiết, không chia sẻ token, cookie hoặc toàn bộ request/response.
+
+Mock RC v2: 28 test, 25 đạt, 3 không đạt. Ba lỗi cũ còn lại thuộc del_header.js (hoa/thường ETag) và Locket.js (thiếu subscriber/User-Agent), chưa sửa trong đợt này. Chưa hỗ trợ bảo đảm giữ tính năng khi tắt Shadowrocket. Các cờ microphone không cấp quyền microphone trên iOS.

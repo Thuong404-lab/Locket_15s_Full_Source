@@ -1,5 +1,7 @@
 # Kiểm tra source Locket — 30/10/2026
 
+> Đợt RC v2: người dùng báo Locket 2.70.0 chỉ quay 3 giây, không thấy caption/âm thanh mong muốn và mất thay đổi khi tắt Shadowrocket. Đã tái hiện bằng mock: User-Agent không chứa Locket làm bản cũ bỏ qua toàn bộ cấu hình. Chưa có log để xác nhận đây là nguyên nhân trên thiết bị. Bản mới nhận diện theo URL project/endpoint, chỉ sửa phản hồi UPDATE có entries hợp lệ, thêm log trạng thái, bỏ macro hostname xuất hiện nguyên văn trên thiết bị và thêm ?v=2 vào URL script để phân biệt bản tải. Mock mới: 28 test, 25 đạt, 3 lỗi cũ ở RevenueCat/header còn tồn tại. Chưa có kết quả kiểm thử RC v2 trên iPhone. Xem README.md cho cách chẩn đoán. Các mục dưới đây là lịch sử kiểm tra, không phải trạng thái mới nhất.
+
 > Cập nhật sau lần kiểm tra ban đầu: người dùng đã chọn công khai repo. Module đã thay SCRIPT_BASE_URL bằng URL Raw của repo Thuong404-lab/Locket_15s_Full_Source, nhánh main. Chạy lại mock: 24 test, 19 đạt, 5 không đạt; mục URL HTTPS đã đạt, 5 lỗi xử lý đầu vào/header vẫn tồn tại. Phần bên dưới lưu kết quả kiểm tra ban đầu. Chưa kiểm thử trên iPhone.
 
 ## Kết luận
