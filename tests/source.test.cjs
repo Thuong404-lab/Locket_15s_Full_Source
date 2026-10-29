@@ -220,3 +220,58 @@ test('robustness: RevenueCat error response must pass through safely', () => {
 test('robustness: RevenueCat response without User-Agent must pass through safely', () => {
   assert.deepEqual(execute('Locket.js', { headers: {}, body: '{"subscriber":{"subscriptions":{},"entitlements":{}}}' }), {});
 });
+
+test('RevenueCat invalid JSON and malformed subscriber fields pass through exactly once', () => {
+  for (const body of [
+    '', '<html>error</html>', 'null', '[]', '"text"',
+    '{"subscriber":null}', '{"subscriber":[]}', '{"subscriber":{}}',
+    '{"subscriber":{"subscriptions":[],"entitlements":{}}}',
+    '{"subscriber":{"subscriptions":{},"entitlements":null}}',
+  ]) assert.deepEqual(execute('Locket.js', { body }), {});
+  for (const headers of [null, { 'User-Agent': 42 }, { 'User-Agent': '' }]) {
+    assert.deepEqual(execute('Locket.js', { headers }), {});
+  }
+});
+
+test('RevenueCat valid response keeps other subscriber data and original Locket mapping', () => {
+  const input = {
+    request_date: 'mock-date',
+    subscriber: {
+      original_app_user_id: 'mock-user',
+      subscriptions: { existing: { sentinel: true } },
+      entitlements: { existing: { sentinel: true } },
+    },
+  };
+  for (const headers of [{ 'User-Agent': 'Locket/2.70.0' }, { 'USER-AGENT': 'Locket/2.70.0' }]) {
+    const output = JSON.parse(execute('Locket.js', { headers, body: JSON.stringify(input) }).body);
+    assert.equal(output.request_date, input.request_date);
+    assert.equal(output.subscriber.original_app_user_id, input.subscriber.original_app_user_id);
+    assert.deepEqual(output.subscriber.subscriptions.existing, input.subscriber.subscriptions.existing);
+    assert.deepEqual(output.subscriber.entitlements.existing, input.subscriber.entitlements.existing);
+    assert.equal(output.subscriber.entitlements.Gold.product_identifier, 'com.locket02.premium.yearly');
+    assert.equal(output.subscriber.entitlements.Gold.expires_date, '9999-12-18T01:04:17Z');
+    assert.equal(output.subscriber.subscriptions['com.locket02.premium.yearly'].store, 'app_store');
+  }
+});
+
+test('header rewrite collapses case variants while preserving unrelated input', () => {
+  const headers = {
+    'X-Revenuecat-Etag': 'first', 'x-revenuecat-etag': 'second',
+    'cf-ipcountry': 'VN', 'CF-IPCountry': 'DE', Authorization: 'mock-only',
+  };
+  const original = { ...headers };
+  const output = execute('del_header.js', { headers }).headers;
+  for (const [name, value] of [['x-revenuecat-etag', ''], ['cf-ipcountry', 'US']]) {
+    const matches = Object.entries(output).filter(([key]) => key.toLowerCase() === name);
+    assert.equal(matches.length, 1);
+    assert.equal(matches[0][1], value);
+  }
+  assert.equal(output.Authorization, 'mock-only');
+  assert.deepEqual(headers, original, 'Proxy input object should not be mutated');
+});
+
+test('header rewrite handles absent headers', () => {
+  const output = execute('del_header.js', { headers: null });
+  assert.equal(output.headers['X-RevenueCat-ETag'], '');
+  assert.equal(output.headers['CF-IPCountry'], 'US');
+});

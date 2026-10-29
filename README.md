@@ -4,6 +4,18 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
+## Bản mới nhất: v4 — sửa 3 lỗi còn lại
+
+Đã sửa xử lý tên header không phân biệt hoa/thường (gộp các bản ETag/quốc gia trùng tên), bảo vệ RevenueCat khi phản hồi lỗi hoặc thiếu subscriber/subscriptions/entitlements, và bỏ qua an toàn khi thiếu User-Agent. Đồng thời xử lý JSON sai, root null/array, header thiếu và User-Agent không phải chuỗi. Không tạo cấu trúc subscriber giả khi đầu vào thiếu. Luồng phản hồi hợp lệ và dữ liệu cấu hình/caption giữ như bản trước.
+
+**Test mock mới nhất: 33/33 đạt, 0 lỗi.** Các kết quả 26/29 và 25/28 ở bên dưới là lịch sử. Điều này chưa xác nhận sửa được âm thanh phía người nhận, Tạo diện mạo hoặc mọi giới hạn trên iPhone.
+
+Link cập nhật module v4:
+
+https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=4
+
+Hai script RevenueCat/header dùng URL `?v=4` để phân biệt bản tải mới; Remote Config/caption vẫn dùng RC v3 và `?v=3`. Tên module là `Locket 15s Photo Only - v4`.
+
 ## Cập nhật RC v3
 
 Thêm nhóm **✨ Caption của bạn** ở đầu `overlay_items`, gồm 8 câu theo đúng thứ tự yêu cầu: Nguyễn Tiến Thương; Trầm Lâm Trúc Ly; Nguyễn Hoàng Hảo; Tôi đẹp trai quá; đẹp gái quá; Yeu oi; Khỉ già vô tâm; Trúc Ly xinh gái.
