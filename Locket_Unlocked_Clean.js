@@ -1,3 +1,4 @@
+// Author: Nguyen Tien Thuong
 var ua = $request.headers["User-Agent"] || $request.headers["user-agent"] || "";
 var obj = JSON.parse($response.body);
 

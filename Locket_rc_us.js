@@ -1,3 +1,4 @@
+// Author: Nguyen Tien Thuong
 if ($request.method === "POST" && $request.body) {
     try {
         var body = typeof $request.body === "string" ? JSON.parse($request.body) : $request.body;

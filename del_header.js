@@ -1,3 +1,4 @@
+// Author: Nguyen Tien Thuong
 const version = 'V1.0.3';
 
 function setHeaderValue(e, a, d) {

@@ -1,1 +1,2 @@
+Author: Nguyen Tien Thuong
 Includes 4 JS scripts and one module. Locket_15s.sgmodule loads scripts from the public GitHub repository using raw.githubusercontent.com URLs. Requires a compatible rewrite/MITM app and certificate. No guarantee that Locket accepts modified settings. See README.md and AUDIT.vi.md.

@@ -1,5 +1,7 @@
 # Locket_15s_Full_Source
 
+**Tác giả:** Nguyen Tien Thuong
+
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
 Module tải script từ repo GitHub công khai này. Link tải module:
