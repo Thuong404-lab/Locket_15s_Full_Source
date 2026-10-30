@@ -1,3 +1,15 @@
+// Shared module control: enabled=false bypasses every rewrite in this script.
+(function () {
+    if (typeof $argument !== "undefined") {
+        var control = typeof $argument === "string" ? /^enabled=(true|false)$/i.exec($argument.trim()) : null;
+        if (!control || control[1].toLowerCase() === "false") {
+            if (typeof console !== "undefined" && typeof console.log === "function") {
+                console.log("[Locket v9] bypass: " + (control ? "enabled=false" : "invalid module argument"));
+            }
+            $done({});
+            return;
+        }
+    }
 // Author: Nguyen Tien Thuong
 const version = 'V1.0.4';
 
@@ -23,3 +35,5 @@ setHeaderValue(modifiedHeaders, "X-Real-IP", "8.8.8.8");
 setHeaderValue(modifiedHeaders, "CF-IPCountry", "US");
 
 $done({ headers: modifiedHeaders });
+
+})();

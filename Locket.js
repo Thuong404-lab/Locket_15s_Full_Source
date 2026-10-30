@@ -1,3 +1,15 @@
+// Shared module control: enabled=false bypasses every rewrite in this script.
+(function () {
+    if (typeof $argument !== "undefined") {
+        var control = typeof $argument === "string" ? /^enabled=(true|false)$/i.exec($argument.trim()) : null;
+        if (!control || control[1].toLowerCase() === "false") {
+            if (typeof console !== "undefined" && typeof console.log === "function") {
+                console.log("[Locket v9] bypass: " + (control ? "enabled=false" : "invalid module argument"));
+            }
+            $done({});
+            return;
+        }
+    }
 // Author: Nguyen Tien Thuong
 const mapping = {
   '%E8%BD%A6%E7%A5%A8%E7%A5%A8': ['vip+watch_vip'],
@@ -62,3 +74,5 @@ function rewriteRevenueCatResponse() {
 }
 
 $done(rewriteRevenueCatResponse());
+
+})();

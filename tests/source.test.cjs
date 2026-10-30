@@ -10,9 +10,13 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const scripts = ['Locket.js', 'del_header.js', 'Locket_Unlocked_Clean.js', 'Locket_rc_us.js'];
 
 // Run only local source with mocked proxy globals. No network or device access.
-function execute(file, { headers = { 'User-Agent': 'Locket/1.0' }, body = '{"state":"UPDATE","entries":{}}', requestBody, method = 'POST', url = 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch', logs = [] } = {}) {
+function execute(file, { headers = { 'User-Agent': 'Locket/1.0' }, body = '{"state":"UPDATE","entries":{}}', requestBody, method = 'POST', url = 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch', logs = [], options, argument } = {}) {
   const completions = [];
-  vm.runInNewContext(read(file), {
+  let source = read(file);
+  if (options) source = source.replace('function rewriteLocketConfig()',
+    `Object.assign(LOCKET_OPTIONS, ${JSON.stringify(options)});\nfunction rewriteLocketConfig()`);
+  vm.runInNewContext(source, {
+    ...(argument === undefined ? {} : { $argument: argument }),
     $request: { headers, method, body: requestBody, url },
     $response: { body },
     console: { log: (message) => logs.push(message) },
@@ -24,6 +28,39 @@ function execute(file, { headers = { 'User-Agent': 'Locket/1.0' }, body = '{"sta
 
 function remoteConfig(options) {
   return JSON.parse(execute('Locket_Unlocked_Clean.js', options).body);
+}
+
+test('module master switch reaches all four scripts and all URLs use v9', () => {
+  const moduleText = read('Locket_15s.sgmodule');
+  assert.match(moduleText, /^#!arguments=enabled:true$/m);
+  const lines = moduleText.split(/\r?\n/).filter(line => line.includes('script-path='));
+  assert.equal(lines.length, 4);
+  for (const line of lines) {
+    assert.ok(line.includes('argument="enabled={{{enabled}}}"'));
+    assert.match(line, /script-path=[^,\s]+\?v=9(?:,|$)/);
+    const file = new URL(line.match(/script-path=([^,\s]+)/)[1]).pathname.split('/').pop();
+    const argument = line.match(/argument="([^"]+)"/)[1].replace('{{{enabled}}}', 'false');
+    assert.deepEqual(execute(file, { argument, body: 'not JSON', requestBody: 'not JSON' }), {});
+  }
+});
+
+for (const file of scripts) {
+  test(`master bypass completes once without reading traffic: ${file}`, () => {
+    for (const argument of ['enabled=false', ' ENABLED=FALSE ', 'enabled={{{enabled}}}', 'invalid', '', null, 42]) {
+      const outputs = [];
+      // Deliberately no $request/$response: bypass must happen before traffic access.
+      vm.runInNewContext(read(file), {
+        $argument: argument,
+        console: { log() {} },
+        $done(value) { outputs.push(JSON.parse(JSON.stringify(value))); },
+      }, { timeout: 1000 });
+      assert.deepEqual(outputs, [{}]);
+    }
+  });
+  test(`enabled=true keeps normal behavior: ${file}`, () => {
+    const input = { body: '{"state":"UPDATE","entries":{},"subscriber":{"subscriptions":{},"entitlements":{}}}', requestBody: '{"country_code":"vn"}' };
+    assert.deepEqual(execute(file, { ...input, argument: 'enabled=true' }), execute(file, input));
+  });
 }
 
 for (const file of scripts) {
@@ -76,6 +113,68 @@ test('audio experiment preserves upstream session settings without inventing a m
     }
   }
   assert.equal(Object.hasOwn(remoteConfig().entries, 'audio_session_deactivation_enabled'), false);
+});
+
+const groupExamples = {
+  captions: ['overlay_items', 'overlay_dynamic_captions', 'captions_enabled', 'music_caption_enabled', 'poll_caption'],
+  camera: ['camera', 'camera_roll', 'camera_filter_config', 'camera_filters_enabled', 'live_photos', 'upload_main', 'capture_classification_config'],
+  audio: ['video_sound_enabled', 'microphone_enabled', 'camera_microphone_enabled'],
+  widget: ['widget_frame_event', 'android_widget_frame_event_enabled', 'widget_rewind_event', 'widget_stale_state_enabled', 'widget_last_sent_indicator'],
+  network: ['cdn_domain_replacements', 'storage_bucket_video', 'friends_cache_max_age_sec', 'fetch_users_from_cloud_function'],
+  social: ['streak_config', 'max_friends_count', 'share_history_config', 'rollcall_enabled'],
+  appearance: ['profile_menu_v2_enabled', 'journal_settings'],
+  other: ['history_ads_mode', 'sentry_sample_rate', 'support_v2'],
+};
+
+test('every combination of switches preserves disabled groups and applies enabled groups', () => {
+  const defaults = remoteConfig().entries;
+  const groups = Object.keys(groupExamples);
+  const entries = { unrelated_sentinel: 'keep', audio_session_deactivation_enabled: 'false' };
+  for (const keys of Object.values(groupExamples)) {
+    for (const key of keys) entries[key] = 'original-' + key;
+  }
+  entries.streak_config = '{"minimum_recovery_count":9,"minimum_display_count":8}';
+  for (let mask = 0; mask < (1 << groups.length); mask++) {
+    const options = Object.fromEntries(groups.map((group, i) => [group, Boolean(mask & (1 << i))]));
+    const logs = [];
+    const output = execute('Locket_Unlocked_Clean.js', { options, logs, body: JSON.stringify({ state: 'UPDATE', entries }) });
+    if (mask === 0) {
+      assert.deepEqual(output, {});
+      continue;
+    }
+    const actual = JSON.parse(output.body).entries;
+    for (const [group, keys] of Object.entries(groupExamples)) {
+      for (const key of keys) assert.equal(actual[key], options[group] ? defaults[key] : entries[key], `${mask}: ${group}/${key}`);
+    }
+    assert.equal(actual.unrelated_sentinel, 'keep');
+    assert.equal(actual.audio_session_deactivation_enabled, 'false');
+    if (!options.audio) assert.ok(logs.every(line => !line.includes('sound=true')));
+    if (!options.captions) assert.ok(logs.every(line => !line.includes('captions=261')));
+  }
+});
+
+test('audio only does not add unrelated settings to an empty config', () => {
+  const { entries } = remoteConfig({ options: { captions: false, camera: false, audio: true, widget: false, network: false, social: false, appearance: false, other: false } });
+  assert.deepEqual(entries, { video_sound_enabled: 'true', microphone_enabled: 'true', camera_microphone_enabled: 'true' });
+});
+
+test('mixed feature gates preserve disabled features and unknown upstream fields', () => {
+  const original = { camera_roll: 'original-camera', long_captions: 'original-caption', custom_widget_frames: 'original-widget', app_icon_picker: 'original-other', unknown: 'keep' };
+  const input = { state: 'UPDATE', entries: { feature_gates: JSON.stringify(original), upsell_features: JSON.stringify(original) } };
+  const options = { captions: true, camera: false, audio: false, widget: false, network: false, social: false, appearance: false, other: false };
+  const { entries } = remoteConfig({ options, body: JSON.stringify(input) });
+  const gates = JSON.parse(entries.feature_gates);
+  assert.deepEqual(gates, { ...original, long_captions: 'enabled' });
+  // There are no caption overrides in upsell_features, so preserve its exact string.
+  assert.equal(entries.upsell_features, input.entries.upsell_features);
+});
+
+test('partial feature rewrites keep malformed upstream objects untouched', () => {
+  for (const value of ['broken', 'null', '[]', '42']) {
+    const { entries } = remoteConfig({ options: { camera: false }, body: JSON.stringify({ state: 'UPDATE', entries: { feature_gates: value, upsell_features: value } }) });
+    assert.equal(entries.feature_gates, value);
+    assert.equal(entries.upsell_features, value);
+  }
 });
 
 test('Goofy/Looks and custom appearance UI are disabled even when upstream enables them', () => {
@@ -136,13 +235,21 @@ test('all six requested captions retain their emoji', () => {
   }
 });
 
-test('personal caption group is removed and all original sections remain intact', () => {
+test('six personal captions appear immediately before Holiday and all original sections remain intact', () => {
   const sections = JSON.parse(remoteConfig().entries.overlay_items);
-  assert.equal(sections.length, 10);
-  assert.equal(sections.flatMap((section) => section.items).length, 255);
+  assert.equal(sections.length, 11);
+  assert.equal(sections.flatMap((section) => section.items).length, 261);
+  const index = sections.findIndex(section => section.section === '🎨 Thương mến 💌');
+  assert.ok(index >= 0);
+  assert.equal(sections[index + 1].section, '🎨 Holiday Caption');
+  assert.deepEqual(sections[index].items.map(item => item.caption.text), [
+    'Trầm Lâm Trúc Ly', 'Nguyễn Hoàng Hảo', 'Nguyễn Tiến Thương',
+    'Ngoan xinh yêu của anh', 'Thích ăn mắm', 'yêu oiiii',
+  ]);
   assert.ok(sections.flatMap((section) => section.items).every((item) => !item.overlay_id.startsWith('caption:priority_')));
   // Digest captured from RC v2 before the addition: preserves every old field and its order.
-  assert.equal(createHash('sha256').update(JSON.stringify(sections)).digest('hex'),
+  const originalSections = sections.filter((section, i) => i !== index);
+  assert.equal(createHash('sha256').update(JSON.stringify(originalSections)).digest('hex'),
     'ba71a054892e40d389f7f17cd5b761e3227166fb1d94e668f9e8c3de16b1e040');
 });
 
@@ -162,7 +269,7 @@ test('matching project works with SDK user agent or missing headers', () => {
   for (const headers of [{ 'User-Agent': 'FirebaseRemoteConfig/12.0' }, {}]) {
     const result = remoteConfig({ headers, body: '{"state":"UPDATE","entries":{"camera":"{\\"max_duration\\":3}"}}' });
     assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
-    assert.equal(JSON.parse(result.entries.overlay_items).flatMap((section) => section.items).length, 255);
+    assert.equal(JSON.parse(result.entries.overlay_items).flatMap((section) => section.items).length, 261);
     assert.equal(result.entries.video_sound_enabled, 'true');
   }
 });
@@ -171,7 +278,7 @@ test('request query does not prevent matching and diagnostics omit query secrets
   const logs = [];
   const result = remoteConfig({ url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch?key=mock-secret', logs });
   assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
-  assert.ok(logs.some((line) => line.includes('[Locket RC v7] response rewritten') && line.includes('captions=255')));
+  assert.ok(logs.some((line) => line.includes('[Locket RC v9] response rewritten') && line.includes('captions=261')));
   assert.ok(logs.every((line) => !line.includes('mock-secret')));
 });
 
@@ -193,7 +300,7 @@ test('cached states and malformed entries stay untouched and produce diagnostics
   ]) {
     const logs = [];
     assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body: JSON.stringify(input), logs }), {});
-    assert.ok(logs.some((line) => line.includes('[Locket RC v7] skipped:')));
+    assert.ok(logs.some((line) => line.includes('[Locket RC v9] skipped:')));
     assert.ok(logs.every((line) => !line.includes('mock-upstream-error')));
   }
 });

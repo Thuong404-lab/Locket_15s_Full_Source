@@ -4,7 +4,87 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
-## Bản mới nhất: v7 — thử nghiệm âm thanh phía nhận
+## Bản mới nhất: v9 — nhóm nhỏ hơn và công tắc đối chiếu
+
+Thêm section `🎨 Thương mến 💌` ngay trước `🎨 Holiday Caption`, gồm: Trầm Lâm Trúc Ly; Nguyễn Hoàng Hảo; Nguyễn Tiến Thương; Ngoan xinh yêu của anh; Thích ăn mắm; yêu oiiii. Tổng cộng **261 caption / 11 nhóm**; 255 caption cũ giữ nguyên nội dung và thứ tự.
+
+`LOCKET_OPTIONS` trong `Locket_Unlocked_Clean.js` có tám nhóm, mặc định đều `true` để giữ các cấu hình v7/v8, kèm section caption mới:
+
+| Nhóm | Phạm vi |
+| --- | --- |
+| `captions` | Caption và overlay |
+| `camera` | Camera, thư viện, filter, Live Photos, zoom và chất lượng upload |
+| `audio` | Ba cờ âm thanh/micro; không ép cờ audio session |
+| `widget` | Widget, khung và sự kiện widget rewind |
+| `network` | CDN, bucket, cache, fetch và refresh dữ liệu |
+| `social` | Bạn bè, chat, phản ứng, streak, nhóm, lịch và kỷ niệm |
+| `appearance` | Icon, profile, journal, thông báo và Live Activities |
+| `other` | Quảng cáo, telemetry, onboarding, hỗ trợ và các trường còn lại |
+
+Ví dụ chỉ thử các cờ âm thanh, giữ cấu hình gốc của bảy nhóm còn lại:
+
+```js
+var LOCKET_OPTIONS = {
+    captions: false,
+    camera: false,
+    audio: true,
+    widget: false,
+    network: false,
+    social: false,
+    appearance: false,
+    other: false
+};
+```
+
+Các tính năng trong `feature_gates`/`upsell_features` cũng được phân nhóm: icon và profile badge thuộc appearance; lượt xem, bạn bè và khôi phục streak thuộc social; camera/caption/widget giữ nhóm tương ứng. Những trường không xác định thuộc other. Tắt nhóm giữ dữ liệu gốc từ phản hồi, không có nghĩa là tắt tính năng trong app. Nếu dùng ví dụ v8 cũ, cần thêm ba công tắc mới; chỉ đặt `other: false` không còn bỏ qua CDN/cache/bạn bè/giao diện.
+
+### Công tắc tổng để đối chiếu
+
+Module khai báo `#!arguments=enabled:true` và truyền cùng giá trị `enabled` tới **cả bốn script**. Trong ứng dụng có hỗ trợ tham số module, đổi tham số `enabled` thành `false` để mọi script gọi `$done({})` đúng một lần trước khi đọc/sửa lưu lượng. Đặt lại `true` để dùng cấu hình nhóm. Không cần sửa bốn file. Cơ chế khai báo tham số và `$argument` theo tài liệu [Surge Module](https://manual.nssurge.com/profile/module.html) và [Surge Scripting](https://manual.nssurge.com/scripting/overview.html).
+
+Chưa xác minh khả năng hỗ trợ tham số trên Shadowrocket/iPhone hoặc mọi phiên bản Surge. Nếu ứng dụng không có giao diện tham số, **tắt toàn bộ module Locket trong danh sách module** để đối chiếu; không bật song song module cũ. Tham số còn nguyên `{{{enabled}}}` hoặc sai định dạng làm các script bỏ qua sửa đổi và log `[Locket v9] bypass: invalid module argument`. Khi chạy script riêng không có `$argument`, mặc định script hoạt động như trước; không coi việc mất tham số là đã bật chế độ đối chiếu.
+
+Chế độ `enabled=false` giữ MITM/proxy theo cấu hình ứng dụng và chỉ ngừng sửa dữ liệu từ bốn script của bộ này. Nó không tắt các module khác, không xóa cache hay thay đổi đã lưu trước đó, không bảo đảm Gold/camera 15 giây vẫn còn. Tắt module cũng không tự hoàn tác cache. Kiểm tra bằng video mới sau khi app có dịp lấy lại cấu hình gốc; không xóa dữ liệu/cài lại app chỉ để ép refresh. Log `[Locket v9] bypass: enabled=false` xác nhận script đã nhận công tắc, chưa chứng minh nội dung cache của app đã về mặc định.
+
+Module/script dùng v9 (`?v=9`), log Remote Config `[Locket RC v9]`. Thay đổi hiện cần được phát hành lên nguồn GitHub và tải lại module/script trên thiết bị để dùng. Bản này không thêm cách sửa âm thanh mới; lỗi mất tiếng phía nhận vẫn chưa được xác định nguyên nhân.
+
+Kiểm thử: **48/48 test mock đạt**, gồm toàn bộ **256 tổ hợp** nhóm, bỏ qua sớm cả bốn script, tham số sai/chưa được thay thế, và đường hoạt động `enabled=true`. Trước khi thêm section mới, dữ liệu đầu ra mặc định được đối chiếu với v7; sau khi thêm, checksum xác nhận 255 caption cũ giữ nguyên. Chạy `node --test tests/source.test.cjs`.
+
+## Lịch sử v8 — chọn nhóm cần sửa
+
+Chỉnh `LOCKET_OPTIONS` ở đầu `Locket_Unlocked_Clean.js`. `true` áp dụng các thay đổi có sẵn của nhóm; `false` giữ dữ liệu gốc từ phản hồi Locket, không có nghĩa là tắt tính năng trong ứng dụng. Mặc định cả năm nhóm là `true` để giữ kết quả cấu hình như v7.
+
+| Công tắc | Phạm vi |
+| --- | --- |
+| `captions` | Danh sách caption, kiểu caption và các cờ caption/overlay |
+| `camera` | Camera, thư viện, filter, Live Photos, zoom, cấu hình chất lượng upload và phân loại ảnh chụp |
+| `audio` | Ba cờ âm thanh/micro; giữ nguyên giá trị gốc của `audio_session_deactivation_enabled` như v7 |
+| `widget` | Các cờ widget, khung widget và sự kiện widget rewind |
+| `other` | Các thay đổi còn lại: CDN, bucket, cache, bạn bè, chat, quảng cáo, streak, journal, thông báo và Live Activities |
+
+Ví dụ chỉ can thiệp âm thanh:
+
+```js
+var LOCKET_OPTIONS = {
+    captions: false,
+    camera: false,
+    audio: true,
+    widget: false,
+    other: false
+};
+```
+
+Chế độ này không ép camera 15 giây hoặc giữ các thay đổi caption/widget. Nếu cần thử camera 15 giây cùng âm thanh thì đặt thêm `camera: true`. Tắt tất cả nhóm làm script trả nguyên phản hồi. Khi tắt caption, script không đọc/đếm danh sách caption gốc nên phản hồi thiếu hoặc sai định dạng caption không gây lỗi ở bước log.
+
+Các trường JSON `feature_gates` và `upsell_features` được phân theo từng tính năng: `camera_roll`, `camera_theme`, `longer_video`, `video` thuộc camera; `long_captions` thuộc caption; `custom_widget_frames` thuộc widget; còn lại thuộc other. Khi chỉ bật một số nhóm, giữ các trường của nhóm đã tắt và trường chưa biết từ phản hồi gốc. Nếu object gốc không đọc được, giữ nguyên cả trường để tránh làm mất cấu hình của nhóm đã tắt.
+
+Các công tắc chỉ điều khiển script Remote Config này. `Locket.js`, `del_header.js` và `Locket_rc_us.js` vẫn hoạt động theo các rule riêng trong module. Live Activities/journal thuộc `other`, không thuộc `widget`. Việc tắt nhóm giữ phản hồi gốc trong các lần fetch tiếp theo; không tự xóa cấu hình cũ đang cache trong ứng dụng. Script vẫn bỏ qua phản hồi `NO_CHANGE` như trước.
+
+Log phiên bản `[Locket RC v8]` ghi các nhóm được bật và chỉ ghi thông tin camera/âm thanh/caption tương ứng. Module dùng tên `Locket 15s Photo Only - v8 Selectable Groups` và URL script `?v=8`. Thay đổi ở máy tính cần được cập nhật lên nguồn GitHub và tải lại module/script trên thiết bị mới có hiệu lực; chưa xác minh hành vi trên iPhone hoặc khắc phục âm thanh phía nhận.
+
+Kiểm thử: **39/39 test mock đạt**, gồm 32 tổ hợp công tắc, chế độ chỉ âm thanh, bảo toàn nhóm bị tắt và JSON tính năng không hợp lệ. Đối chiếu đầu ra mặc định với v7 khớp cho phản hồi trống và phản hồi có dữ liệu gốc. Chạy `node --test tests/source.test.cjs` để kiểm tra cục bộ.
+
+## Lịch sử v7 — thử nghiệm âm thanh phía nhận
 
 Bỏ ép `audio_session_deactivation_enabled = "true"`, giữ giá trị gốc từ Remote Config; nếu phản hồi không có trường này thì không thêm. Ba cờ `video_sound_enabled`, `microphone_enabled`, `camera_microphone_enabled` vẫn là `"true"`. Đây là thử nghiệm loại bỏ một override, chưa xác định ý nghĩa thực tế của cờ trong ứng dụng hoặc chứng minh sửa được lỗi mất tiếng. Không đổi các giá trị camera, thư viện, caption hay filter.
 

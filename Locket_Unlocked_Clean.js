@@ -1,8 +1,33 @@
+// Shared module control: enabled=false bypasses every rewrite in this script.
+(function () {
+    if (typeof $argument !== "undefined") {
+        var control = typeof $argument === "string" ? /^enabled=(true|false)$/i.exec($argument.trim()) : null;
+        if (!control || control[1].toLowerCase() === "false") {
+            if (typeof console !== "undefined" && typeof console.log === "function") {
+                console.log("[Locket v9] bypass: " + (control ? "enabled=false" : "invalid module argument"));
+            }
+            $done({});
+            return;
+        }
+    }
 // Author: Nguyen Tien Thuong
+// true = apply this group's overrides; false = preserve Locket's config.
+// These switches only control this Remote Config script, not the other scripts.
+var LOCKET_OPTIONS = {
+    captions: true, // Caption list, styles and caption feature flags.
+    camera: true,   // Camera, gallery, filters, Live Photos and upload quality.
+    audio: true,    // Sound/microphone flags; upstream audio-session flag is preserved.
+    widget: true,   // Widget flags, frames and widget rewind event.
+    network: true, // CDN, buckets, caches and fetch behavior.
+    social: true,  // Friends, chat, reactions, streaks and memories.
+    appearance: true, // Icons, profile, journal, notifications and Live Activities.
+    other: true    // Remaining overrides: ads, telemetry, onboarding and support.
+};
+
 function rewriteLocketConfig() {
     function logStatus(message) {
         if (typeof console !== "undefined" && typeof console.log === "function") {
-            console.log("[Locket RC v7] " + message);
+            console.log("[Locket RC v9] " + message);
         }
     }
 
@@ -30,9 +55,69 @@ function rewriteLocketConfig() {
         logStatus("skipped: full UPDATE with entries required (possibly cached response)");
         return {};
     }
+    var activeGroups = Object.keys(LOCKET_OPTIONS).filter(function (group) {
+        return LOCKET_OPTIONS[group] === true;
+    });
+    if (!activeGroups.length) {
+        logStatus("skipped: all groups disabled");
+        return {};
+    }
+
+    function groupForKey(key) {
+        if (/^(video_sound_enabled|microphone_enabled|camera_microphone_enabled)$/.test(key)) return "audio";
+        if (/^(camera(?:_|$)|live_photos$|zoom_enabled$|upload_|capture_classification_config$)/.test(key)) return "camera";
+        if (/caption|^overlay/.test(key)) return "captions";
+        if (/^widget_|^android_widget_/.test(key)) return "widget";
+        if (/^cdn_|^storage_bucket|cache|^use_doc_dir_for_image_cache$|^timestamp_based_history_fetches$|^get_latest_moment|^fetch_|^refresh_interval$|^firestore_refresh|^keychain_access_retries$/.test(key)) return "network";
+        if (/friend|celebrity|moment_views|moment_reactions|chat|conversation|typing|unsend|reply|messages|^groups|^group_|contacts|^rollcall|^calendar|^time_travel|yearbook|birthday|^memory_|^share_history|^streak|^catch_up/.test(key)) return "social";
+        if (/^app_icon|^profile_|^custom_profile_pics$|^lunar_|^journal_|^activity_bar_|^live_activity|^register_live_activity|^notification_|^prompt_notification|^qr_code_/.test(key)) return "appearance";
+        return "other";
+    }
+
+    // These two JSON objects contain features belonging to several groups.
+    var featureGroups = {
+        camera_roll: "camera", camera_theme: "camera", longer_video: "camera", video: "camera",
+        long_captions: "captions", custom_widget_frames: "widget",
+        app_icon_picker: "appearance", profile_badge: "appearance",
+        locket_views: "social", unlimited_friends: "social", streak_recovery: "social"
+    };
+    function applyFeatureOverrides(key, encoded) {
+        var overrides = JSON.parse(encoded);
+        var keys = Object.keys(overrides);
+        var enabled = keys.filter(function (name) {
+            return LOCKET_OPTIONS[featureGroups[name] || "other"] === true;
+        });
+        if (!enabled.length) return;
+        if (enabled.length === keys.length) {
+            obj.entries[key] = encoded;
+            return;
+        }
+        var original = {};
+        if (Object.prototype.hasOwnProperty.call(obj.entries, key)) {
+            try {
+                original = JSON.parse(obj.entries[key]);
+                if (!original || typeof original !== "object" || Array.isArray(original)) return;
+            } catch (e) {
+                // Cannot safely preserve disabled features in an opaque value.
+                return;
+            }
+        }
+        enabled.forEach(function (name) { original[name] = overrides[name]; });
+        obj.entries[key] = JSON.stringify(original);
+    }
+    function applyOverrides(values) {
+        Object.keys(values).forEach(function (key) {
+            if (key === "feature_gates" || key === "upsell_features") {
+                applyFeatureOverrides(key, values[key]);
+            } else if (LOCKET_OPTIONS[groupForKey(key)] === true) {
+                obj.entries[key] = values[key];
+            }
+        });
+    }
+
     obj.Attention = "Chúc mừng bạn! Vui lòng không sử dụng chúng dưới mục đích thương mại!";
 
-    Object.assign(obj.entries, {
+    applyOverrides({
         feature_gates: JSON.stringify({
             app_icon_picker: "enabled",
             camera_roll: "enabled",
@@ -69,7 +154,7 @@ function rewriteLocketConfig() {
         lunar_new_year_app_icon_enabled: "true"
     });
 
-    Object.assign(obj.entries, {
+    applyOverrides({
         history_ads_mode: "off",
         history_ads_prefetch_count: "0",
         history_ads_prefetch_immediate: "false",
@@ -87,7 +172,7 @@ function rewriteLocketConfig() {
         sentry_profiles_sample_rate: "0"
     });
 
-    Object.assign(obj.entries, {
+    applyOverrides({
         camera: JSON.stringify({
             gold_max_duration: 15.0,
             goldMaxDuration: 15.0,
@@ -151,7 +236,7 @@ function rewriteLocketConfig() {
         upload_thumbnail_image_size: "1020"
     });
 
-    Object.assign(obj.entries, {
+    applyOverrides({
         max_friends_count: "999999999",
         friend_limit_mode: "0",
         soft_friend_limit_threshold_count: "999999999",
@@ -182,13 +267,15 @@ function rewriteLocketConfig() {
     });
 
     try {
-        var streak = JSON.parse(obj.entries.streak_config || "{}");
-        streak.minimum_recovery_count = 0;
-        streak.minimum_display_count = 0;
-        obj.entries.streak_config = JSON.stringify(streak);
+        if (LOCKET_OPTIONS.social === true) {
+            var streak = JSON.parse(obj.entries.streak_config || "{}");
+            streak.minimum_recovery_count = 0;
+            streak.minimum_display_count = 0;
+            obj.entries.streak_config = JSON.stringify(streak);
+        }
     } catch (e) {}
 
-    Object.assign(obj.entries, {
+    applyOverrides({
         moment_views_enabled: "true",
         moment_views_v2: "true",
         record_moment_views: "true",
@@ -262,7 +349,7 @@ function rewriteLocketConfig() {
         rollcall_badge_refresh_config: JSON.stringify({ ttl: { sunday: 0, monday: 7200, tuesday: 7200, wednesday: 7200, thursday: 7200, friday: 7200, saturday: 7200 }, disabled_days: [] }),
     });
 
-    Object.assign(obj.entries, {
+    applyOverrides({
         widget_frame_event_max_images: "5",
         android_widget_frame_event_enabled: "true",
         widget_badge_enabled: "true",
@@ -305,7 +392,7 @@ function rewriteLocketConfig() {
         profile_menu_v2_enabled: "true"
     });
 
-    Object.assign(obj.entries, {
+    applyOverrides({
         cdn_domain_replacements: JSON.stringify({ "firebasestorage.googleapis.com": "cdn.locketcamera.com" }),
         cdn_domain_replacements_video: "true",
         storage_bucket: "gs://locket-img",
@@ -343,7 +430,7 @@ function rewriteLocketConfig() {
         onboarding_contact_permission_step: "true",
     });
 
-    Object.assign(obj.entries, {
+    applyOverrides({
         overlay_navigator_enabled: "true",
         overlays_v2_config: JSON.stringify({ suggestions_enabled: true }),
         captions_enabled: "true",
@@ -373,6 +460,17 @@ function rewriteLocketConfig() {
                     { overlay_id: "caption:quote", source: "local", caption: { type: "quote" } },
                     { overlay_id: "caption:breaking_news", source: "local", caption: { type: "breaking_news" } },
                     { overlay_id: "caption:locket_count", source: "local", caption: { type: "locket_count" } },
+                ]
+            },
+            {
+                section: "🎨 Thương mến 💌",
+                items: [
+                    { overlay_id: "caption:thuong_men_tram_lam_truc_ly", source: "remote", caption: { background: { colors: ["#FCE7F3", "#FBCFE8"] }, icon: { data: "🌷", type: "emoji" }, max_lines: 1, text: "Trầm Lâm Trúc Ly", text_color: "#831843", type: "static_content" } },
+                    { overlay_id: "caption:thuong_men_nguyen_hoang_hao", source: "remote", caption: { background: { colors: ["#DBEAFE", "#BFDBFE"] }, icon: { data: "💙", type: "emoji" }, max_lines: 1, text: "Nguyễn Hoàng Hảo", text_color: "#1E3A8A", type: "static_content" } },
+                    { overlay_id: "caption:thuong_men_nguyen_tien_thuong", source: "remote", caption: { background: { colors: ["#EDE9FE", "#DDD6FE"] }, icon: { data: "✨", type: "emoji" }, max_lines: 1, text: "Nguyễn Tiến Thương", text_color: "#4C1D95", type: "static_content" } },
+                    { overlay_id: "caption:thuong_men_ngoan_xinh_yeu", source: "remote", caption: { background: { colors: ["#FFE4E6", "#FECDD3"] }, icon: { data: "🎀", type: "emoji" }, max_lines: 1, text: "Ngoan xinh yêu của anh", text_color: "#881337", type: "static_content" } },
+                    { overlay_id: "caption:thuong_men_thich_an_mam", source: "remote", caption: { background: { colors: ["#FEF3C7", "#FDE68A"] }, icon: { data: "🍚", type: "emoji" }, max_lines: 1, text: "Thích ăn mắm", text_color: "#78350F", type: "static_content" } },
+                    { overlay_id: "caption:thuong_men_yeu_oiiii", source: "remote", caption: { background: { colors: ["#FAE8FF", "#F5D0FE"] }, icon: { data: "💗", type: "emoji" }, max_lines: 1, text: "yêu oiiii", text_color: "#701A75", type: "static_content" } },
                 ]
             },
             {
@@ -664,7 +762,7 @@ function rewriteLocketConfig() {
         ])
     });
 
-    Object.assign(obj.entries, {
+    applyOverrides({
         birthday_feature_config: "{\"profile_menu\":true,\"prompt_interval\":1209600,\"show_frame\":true}",
         calendar_friend_birthdays: "{\"fetching\":true,\"calendar_display\":true,\"feature_popup\":true,\"settings_visibility_toggle_enabled\":true,\"fetch_ttl_seconds\":86400}",
         time_travel_rewind_v2_enabled: "true",
@@ -681,7 +779,7 @@ function rewriteLocketConfig() {
         rollcall_memories_streaks_enabled: "true"
     });
 
-    Object.assign(obj.entries, {
+    applyOverrides({
         streak_reminders: "true",
         catch_up_show_nav_bar: "true",
         pad_server_friend_suggestions: "true",
@@ -691,10 +789,18 @@ function rewriteLocketConfig() {
         show_no_friends_bottom_sheet: "true",
         share_history_config: JSON.stringify({ prompt_enabled: true, fetching_enabled: true })
     });
-    var captionSections = JSON.parse(obj.entries.overlay_items);
-    var captionCount = captionSections.reduce(function (count, section) { return count + section.items.length; }, 0);
-    logStatus("response rewritten: camera=15s, gallery-video=false, sound=true, captions=" + captionCount + "; device behavior unverified");
+    var details = ["groups=" + activeGroups.join(",")];
+    if (LOCKET_OPTIONS.camera === true) details.push("camera=15s, gallery-video=false");
+    if (LOCKET_OPTIONS.audio === true) details.push("sound=true");
+    if (LOCKET_OPTIONS.captions === true) {
+        var captionSections = JSON.parse(obj.entries.overlay_items);
+        var captionCount = captionSections.reduce(function (count, section) { return count + section.items.length; }, 0);
+        details.push("captions=" + captionCount);
+    }
+    logStatus("response rewritten: " + details.join("; ") + "; device behavior unverified");
     return { body: JSON.stringify(obj) };
 }
 
 $done(rewriteLocketConfig());
+
+})();
