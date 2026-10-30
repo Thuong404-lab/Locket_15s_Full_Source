@@ -47,7 +47,7 @@ test('compatible module enables all four scripts without template substitution',
     assert.deepEqual(result, execute(file, input));
     if (file === 'Locket_Unlocked_Clean.js') {
       const sections = JSON.parse(JSON.parse(result.body).entries.overlay_items);
-      assert.equal(sections.find(section => section.section === '🎨 Thương mến 💌').items.length, 6);
+      assert.ok(sections.find(section => section.section === '🎨 Tình yêu & Cơm chó 💕').items.some(item => item.overlay_id === 'caption:thuong_men_nguyen_tien_thuong'));
     }
   }
 });
@@ -243,21 +243,21 @@ test('all six requested captions retain their emoji', () => {
   }
 });
 
-test('six personal captions follow Decorative and all original sections remain intact', () => {
+test('six personal captions lead the love section and all original captions remain intact', () => {
   const sections = JSON.parse(remoteConfig().entries.overlay_items);
-  assert.equal(sections.length, 11);
+  assert.equal(sections.length, 10);
   assert.equal(sections.flatMap((section) => section.items).length, 261);
-  const index = sections.findIndex(section => section.section === '🎨 Thương mến 💌');
+  const index = sections.findIndex(section => section.section === '🎨 Tình yêu & Cơm chó 💕');
   assert.ok(index >= 0);
   assert.equal(sections[index - 1].section, '🎨 Decorative by Locket');
-  assert.equal(sections[index + 1].section, '🎨 Tình yêu & Cơm chó 💕');
-  assert.deepEqual(sections[index].items.map(item => item.caption.text), [
+  assert.ok(!sections.some(section => section.section === '🎨 Thương mến 💌'));
+  assert.deepEqual(sections[index].items.slice(0, 6).map(item => item.caption.text), [
     'Trầm Lâm Trúc Ly', 'Nguyễn Hoàng Hảo', 'Nguyễn Tiến Thương',
     'Ngoan xinh yêu của anh', 'Thích ăn Mắm', 'yêu oiiii',
   ]);
   assert.ok(sections.flatMap((section) => section.items).every((item) => !item.overlay_id.startsWith('caption:priority_')));
   // Digest captured from RC v2 before the addition: preserves every old field and its order.
-  const originalSections = sections.filter((section, i) => i !== index);
+  const originalSections = sections.map((section, i) => i === index ? { ...section, items: section.items.slice(6) } : section);
   assert.equal(createHash('sha256').update(JSON.stringify(originalSections)).digest('hex'),
     'ba71a054892e40d389f7f17cd5b761e3227166fb1d94e668f9e8c3de16b1e040');
 });
