@@ -4,6 +4,12 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
+## Kiểm tra trên Locket 2.70.0 — 31/10/2026
+
+Người dùng xác nhận cài module và mất Gold khi tắt **toàn bộ Shadowrocket**. Bộ source chỉ sửa phản hồi trên thiết bị, không cấp thuê bao thật cho tài khoản; chưa có cơ chế giữ Gold khi tắt bộ rewrite. Bản công khai v12 khớp source local, mock **53/53 đạt**, nhưng chưa có log mới để kết luận nguyên nhân quay 3 giây và không caption trên máy người bạn.
+
+Đã thêm [profile DIRECT](Locket_15s_Direct.conf) để thử không dùng VPS, vẫn cần giữ Shadowrocket bật và cấu hình chứng chỉ MITM riêng trên thiết bị. Nhập bằng [URL Raw của profile DIRECT](https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s_Direct.conf). Xem [báo cáo kiểm tra và cách đọc log](diagnostics/DEVICE_CHECK.vi.md). Profile chưa được kiểm thử trên iPhone; các mục phiên bản bên dưới là lịch sử.
+
 ## Bản mới nhất: v12 — cập nhật cấu hình và sáu caption cá nhân
 
 Sáu caption cá nhân vẫn nằm đầu nhóm `🎨 Tình yêu & Cơm chó 💕`, tổng 261 caption / 10 nhóm. Bản v12 bổ sung xử lý cache: bỏ `If-None-Match` trên request fetch đúng project Locket để yêu cầu bộ cấu hình đầy đủ; phản hồi đã sửa dùng ETag theo nội dung mới để SDK phân biệt với bản cũ. Giữ nguyên phản hồi `NO_CHANGE`, lỗi hoặc thiếu cấu hình; không tạo bộ cấu hình giả từ phản hồi thiếu dữ liệu.
