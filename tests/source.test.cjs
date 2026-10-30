@@ -10,7 +10,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const scripts = ['Locket.js', 'del_header.js', 'Locket_Unlocked_Clean.js', 'Locket_rc_us.js'];
 
 // Run only local source with mocked proxy globals. No network or device access.
-function execute(file, { headers = { 'User-Agent': 'Locket/1.0' }, body = '{"state":"UPDATE","entries":{}}', requestBody, method = 'POST', url = 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch', logs = [], options, argument } = {}) {
+function execute(file, { headers = { 'User-Agent': 'Locket/1.0' }, responseHeaders, body = '{"state":"UPDATE","entries":{}}', requestBody, method = 'POST', url = 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch', logs = [], options, argument } = {}) {
   const completions = [];
   let source = read(file);
   if (options) source = source.replace('function rewriteLocketConfig()',
@@ -18,7 +18,7 @@ function execute(file, { headers = { 'User-Agent': 'Locket/1.0' }, body = '{"sta
   vm.runInNewContext(source, {
     ...(argument === undefined ? {} : { $argument: argument }),
     $request: { headers, method, body: requestBody, url },
-    $response: { body },
+    $response: { body, headers: responseHeaders },
     console: { log: (message) => logs.push(message) },
     $done: (value) => completions.push(JSON.parse(JSON.stringify(value))),
   }, { timeout: 1000, filename: file });
@@ -38,7 +38,7 @@ test('compatible module enables all four scripts without template substitution',
   assert.equal(lines.length, 4);
   for (const line of lines) {
     assert.ok(line.includes('argument="enabled=true"'));
-    assert.match(line, /script-path=[^,\s]+\?v=11(?:,|$)/);
+    assert.match(line, /script-path=[^,\s]+\?v=12(?:,|$)/);
     const file = new URL(line.match(/script-path=([^,\s]+)/)[1]).pathname.split('/').pop();
     const argument = line.match(/argument="([^"]+)"/)[1];
     const input = { body: '{"state":"UPDATE","entries":{},"subscriber":{"subscriptions":{},"entitlements":{}}}', requestBody: '{"country_code":"vn"}' };
@@ -293,7 +293,7 @@ test('request query does not prevent matching and diagnostics omit query secrets
   const logs = [];
   const result = remoteConfig({ url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch?key=mock-secret', logs });
   assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
-  assert.ok(logs.some((line) => line.includes('[Locket RC v11] response rewritten') && line.includes('captions=261')));
+  assert.ok(logs.some((line) => line.includes('[Locket RC v12] response rewritten') && line.includes('captions=261')));
   assert.ok(logs.every((line) => !line.includes('mock-secret')));
 });
 
@@ -315,7 +315,7 @@ test('cached states and malformed entries stay untouched and produce diagnostics
   ]) {
     const logs = [];
     assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body: JSON.stringify(input), logs }), {});
-    assert.ok(logs.some((line) => line.includes('[Locket RC v11] skipped:')));
+    assert.ok(logs.some((line) => line.includes('[Locket RC v12] skipped:')));
     assert.ok(logs.every((line) => !line.includes('mock-upstream-error')));
   }
 });
@@ -346,6 +346,54 @@ test('US request rewrite preserves unrelated request fields', () => {
 test('US request rewrite handles invalid JSON and GET without changing body', () => {
   assert.deepEqual(execute('Locket_rc_us.js', { requestBody: 'invalid' }), {});
   assert.deepEqual(execute('Locket_rc_us.js', { method: 'GET', requestBody: '{}' }), {});
+});
+
+test('config fetch removes all conditional ETag variants while preserving credentials and input', () => {
+  const headers = { 'If-None-Match': 'old', 'if-none-match': 'duplicate', Authorization: 'mock-token', 'Content-Type': 'application/json' };
+  const original = { ...headers };
+  const result = execute('Locket_rc_us.js', { headers, requestBody: '{"token":"mock-body-token"}' });
+  assert.ok(Object.keys(result.headers).every(key => key.toLowerCase() !== 'if-none-match'));
+  assert.equal(result.headers.Authorization, 'mock-token');
+  assert.equal(result.headers['Content-Type'], 'application/json');
+  assert.equal(JSON.parse(result.body).token, 'mock-body-token');
+  assert.deepEqual(headers, original);
+});
+
+test('config fetch refresh is scoped and does not rewrite malformed bodies', () => {
+  for (const url of [
+    'https://firebaseremoteconfig.googleapis.com/v1/projects/another-app/namespaces/firebase:fetch',
+    'https://firebaseremoteconfig.googleapis.com.evil.test/v1/projects/locket-4252a/namespaces/firebase:fetch',
+    'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetchOther',
+  ]) assert.deepEqual(execute('Locket_rc_us.js', { url, requestBody: '{}' }), {});
+  for (const requestBody of ['[]', 'null', '42', 'broken']) {
+    assert.deepEqual(execute('Locket_rc_us.js', { requestBody }), {});
+  }
+  assert.equal(JSON.parse(execute('Locket_rc_us.js', { headers: null, requestBody: '{}' }).body).country_code, 'us');
+});
+
+test('rewritten config validators identify changed content and preserve unrelated response headers', () => {
+  const responseHeaders = { ETag: 'upstream', etag: 'duplicate', 'Content-Type': 'application/json', 'X-Sentinel': 'keep' };
+  const original = { ...responseHeaders };
+  const first = execute('Locket_Unlocked_Clean.js', { responseHeaders });
+  const same = execute('Locket_Unlocked_Clean.js', { responseHeaders: { etag: 'different-upstream-tag' } });
+  const changed = execute('Locket_Unlocked_Clean.js', { responseHeaders, body: '{"state":"UPDATE","entries":{"sentinel":"new"}}' });
+  assert.match(first.headers.etag, /^"locket-v12-[0-9a-f]+"$/);
+  assert.equal(Object.keys(first.headers).filter(key => key.toLowerCase() === 'etag').length, 1);
+  assert.equal(first.headers.etag, same.headers.etag);
+  assert.notEqual(first.headers.etag, changed.headers.etag);
+  assert.equal(first.headers['Content-Type'], 'application/json');
+  assert.equal(first.headers['X-Sentinel'], 'keep');
+  assert.deepEqual(responseHeaders, original);
+  assert.deepEqual(execute('Locket_Unlocked_Clean.js', { responseHeaders, body: '{"state":"NO_CHANGE"}' }), {});
+});
+
+test('caption diagnostics confirm all six personal items without exposing their text or tokens', () => {
+  const logs = [];
+  const output = execute('Locket_Unlocked_Clean.js', { logs, url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch?key=mock-secret' });
+  const items = JSON.parse(JSON.parse(output.body).entries.overlay_items).flatMap(section => section.items);
+  assert.equal(items.filter(item => item.overlay_id.startsWith('caption:thuong_men_')).length, 6);
+  assert.ok(logs.some(line => line.includes('personal-captions=6') && line.includes('config-tag=')));
+  assert.ok(logs.every(line => !line.includes('mock-secret') && !line.includes('Trầm Lâm Trúc Ly')));
 });
 
 test('header script preserves unrelated headers and clears normal ETag casing', () => {

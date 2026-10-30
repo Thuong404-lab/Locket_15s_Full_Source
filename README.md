@@ -4,7 +4,17 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
-## Bản mới nhất: v11 — caption và banner hồ sơ
+## Bản mới nhất: v12 — cập nhật cấu hình và sáu caption cá nhân
+
+Sáu caption cá nhân vẫn nằm đầu nhóm `🎨 Tình yêu & Cơm chó 💕`, tổng 261 caption / 10 nhóm. Bản v12 bổ sung xử lý cache: bỏ `If-None-Match` trên request fetch đúng project Locket để yêu cầu bộ cấu hình đầy đủ; phản hồi đã sửa dùng ETag theo nội dung mới để SDK phân biệt với bản cũ. Giữ nguyên phản hồi `NO_CHANGE`, lỗi hoặc thiếu cấu hình; không tạo bộ cấu hình giả từ phản hồi thiếu dữ liệu.
+
+Cơ chế dựa trên [mã nguồn Firebase Apple SDK](https://github.com/firebase/firebase-ios-sdk/blob/main/FirebaseRemoteConfig/Sources/RCNConfigFetch.m): SDK gửi ETag đã lưu khi fetch và kiểm tra thời gian tối thiểu giữa các lần fetch. Đây là sửa một điểm thiếu trong xử lý cache của module; chưa có log trên thiết bị để khẳng định đây là nguyên nhân sáu caption chưa hiển thị. Proxy không ép được app gửi request khi SDK đang dùng cache cục bộ và không bảo đảm Locket áp dụng giao diện mới.
+
+Cập nhật từ [module v12](https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=12), tải lại script nếu cần, chỉ bật một module Locket rồi đóng hẳn và mở lại app. Log mới: `[Locket RC v12] request rewritten: full config requested`, tiếp theo là `response rewritten` với `personal-captions=6` và `config-tag=...`. Số 6 xác nhận sáu mục đã được đưa vào phản hồi, chưa xác nhận hiển thị trên iPhone. Không cần xóa dữ liệu hoặc cài lại Locket.
+
+Kiểm thử: **53/53 test mock đạt**, gồm bảo toàn header và dữ liệu xác thực, phạm vi endpoint, ETag ổn định theo nội dung, không sửa phản hồi lỗi/NO_CHANGE, và đủ sáu caption. Giữ cấu hình ẩn banner của v11. Chưa sửa âm thanh phía nhận.
+
+## Lịch sử v11 — caption và banner hồ sơ
 
 Đặt `paywall_presentation_config.profile_banner=false` thay cho `true`; cấu hình này thuộc nhóm `appearance`. Đây là yêu cầu ẩn banner quảng bá Gold, không phải xác nhận ứng dụng 2.70.0 sẽ áp dụng cờ hoặc tài khoản có thuê bao Gold thật. Chưa xác minh giao diện trên iPhone và chưa sửa âm thanh phía nhận.
 

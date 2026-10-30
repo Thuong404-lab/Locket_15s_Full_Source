@@ -4,7 +4,7 @@
         var control = typeof $argument === "string" ? /^enabled=(true|false)$/i.exec($argument.trim()) : null;
         if (!control || control[1].toLowerCase() === "false") {
             if (typeof console !== "undefined" && typeof console.log === "function") {
-                console.log("[Locket v11] bypass: " + (control ? "enabled=false" : "invalid module argument"));
+                console.log("[Locket v12] bypass: " + (control ? "enabled=false" : "invalid module argument"));
             }
             $done({});
             return;
@@ -27,7 +27,7 @@
     function rewriteLocketConfig() {
         function logStatus(message) {
             if (typeof console !== "undefined" && typeof console.log === "function") {
-                console.log("[Locket RC v11] " + message);
+                console.log("[Locket RC v12] " + message);
             }
         }
 
@@ -794,9 +794,30 @@
             var captionSections = JSON.parse(obj.entries.overlay_items);
             var captionCount = captionSections.reduce(function (count, section) { return count + section.items.length; }, 0);
             details.push("captions=" + captionCount);
+            var personalCount = captionSections.reduce(function (count, section) {
+                return count + section.items.filter(function (item) {
+                    return item.overlay_id.indexOf("caption:thuong_men_") === 0;
+                }).length;
+            }, 0);
+            details.push("personal-captions=" + personalCount);
         }
+        // The SDK uses response ETags during activation. Identify the rewritten
+        // representation rather than reusing an ETag for the upstream body.
+        // This small deterministic hash is a cache validator, not a security hash.
+        var rewrittenBody = JSON.stringify(obj);
+        var hash = 2166136261;
+        for (var i = 0; i < rewrittenBody.length; i++) {
+            hash ^= rewrittenBody.charCodeAt(i);
+            hash = (hash + (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24)) >>> 0;
+        }
+        var responseHeaders = Object.assign({}, $response.headers || {});
+        Object.keys(responseHeaders).forEach(function (key) {
+            if (key.toLowerCase() === "etag") delete responseHeaders[key];
+        });
+        responseHeaders.etag = '"locket-v12-' + hash.toString(16) + '"';
+        details.push("config-tag=" + hash.toString(16));
         logStatus("response rewritten: " + details.join("; ") + "; device behavior unverified");
-        return { body: JSON.stringify(obj) };
+        return { body: rewrittenBody, headers: responseHeaders };
     }
 
     $done(rewriteLocketConfig());
