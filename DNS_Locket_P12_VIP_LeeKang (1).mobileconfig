@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PayloadContent</key>
+    <array>
+        <dict>
+            <key>DNSSettings</key>
+            <dict>
+                <key>DNSProtocol</key>
+                <string>HTTPS</string>
+                <key>ServerAddresses</key>
+                <array>
+                    <string>1.1.1.1</string>
+                    <string>1.0.0.1</string>
+                </array>
+                <key>ServerURL</key>
+                <string>https://api.p12.vn/dns-query</string>
+                <key>SupplementalMatchDomains</key>
+                <array>
+                    <string>locketapp.com</string>
+                    <string>api.locketapp.com</string>
+                    <string>auth.locketapp.com</string>
+                    <string>verify.locketapp.com</string>
+                    <string>gold.locketapp.com</string>
+                    <string>api.revenuecat.com</string>
+                    <string>app.revenuecat.com</string>
+                    <string>api.rc-backup.com</string>
+                    <string>certs.apple.com</string>
+                    <string>ocsp.apple.com</string>
+                    <string>ocsp2.apple.com</string>
+                    <string>valid.apple.com</string>
+                    <string>crl.apple.com</string>
+                </array>
+                <key>SupplementalMatchDomainsNoSearch</key>
+                <array>
+                    <string>locketapp.com</string>
+                    <string>gold.locketapp.com</string>
+                </array>
+            </dict>
+            <key>PayloadDescription</key>
+            <string>Khóa cổng kiểm tra bản quyền Locket Camera &amp; RevenueCat qua cơ chế SupplementalMatchDomains: Giúp bạn TẮT HẲN VPN Shadowrocket mà vẫn duy trì Locket Gold vĩnh viễn (0% Hao Pin).</string>
+            <key>PayloadDisplayName</key>
+            <string>P12 VIP SupplementalMatchDomains Engine</string>
+            <key>PayloadIdentifier</key>
+            <string>com.leekang.locket.p12.settings</string>
+            <key>PayloadType</key>
+            <string>com.apple.dnsSettings.managed</string>
+            <key>PayloadUUID</key>
+            <string>3f0dfb6b-9135-4f61-ae5a-c2c401fe84ca</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+            <key>ProhibitDisablement</key>
+            <false/>
+        </dict>
+    </array>
+    <key>PayloadDescription</key>
+    <string>Hồ sơ DNS SupplementalMatchDomains độc quyền của Lee Kang: Định tuyến cục bộ bảo mật, giữ nguyên 100% tốc độ mạng cho mọi ứng dụng khác (Facebook, TikTok, Zalo, YouTube, game), chỉ lọc các cổng xác thực Locket để máy duy trì Gold vĩnh viễn với 0% hao pin.</string>
+    <key>PayloadDisplayName</key>
+    <string>DNS Giữ Locket Gold (Server 2 P12 VIP • Lee Kang)</string>
+    <key>PayloadIdentifier</key>
+    <string>com.leekang.locket.p12.profile</string>
+    <key>PayloadOrganization</key>
+    <string>Lee Kang • Locket Gold Pro Suite</string>
+    <key>PayloadRemovalDisallowed</key>
+    <false/>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadUUID</key>
+    <string>c0893f03-5b41-448f-83d8-800ca7cddb78</string>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+</dict>
+</plist>

@@ -243,16 +243,17 @@ test('all six requested captions retain their emoji', () => {
   }
 });
 
-test('six personal captions appear immediately before Holiday and all original sections remain intact', () => {
+test('six personal captions follow Decorative and all original sections remain intact', () => {
   const sections = JSON.parse(remoteConfig().entries.overlay_items);
   assert.equal(sections.length, 11);
   assert.equal(sections.flatMap((section) => section.items).length, 261);
   const index = sections.findIndex(section => section.section === '🎨 Thương mến 💌');
   assert.ok(index >= 0);
-  assert.equal(sections[index + 1].section, '🎨 Holiday Caption');
+  assert.equal(sections[index - 1].section, '🎨 Decorative by Locket');
+  assert.equal(sections[index + 1].section, '🎨 Tình yêu & Cơm chó 💕');
   assert.deepEqual(sections[index].items.map(item => item.caption.text), [
     'Trầm Lâm Trúc Ly', 'Nguyễn Hoàng Hảo', 'Nguyễn Tiến Thương',
-    'Ngoan xinh yêu của anh', 'Thích ăn mắm', 'yêu oiiii',
+    'Ngoan xinh yêu của anh', 'Thích ăn Mắm', 'yêu oiiii',
   ]);
   assert.ok(sections.flatMap((section) => section.items).every((item) => !item.overlay_id.startsWith('caption:priority_')));
   // Digest captured from RC v2 before the addition: preserves every old field and its order.

@@ -1,0 +1,68 @@
+{
+  "checked_at_utc": "2026-10-29T19:54:19.336486+00:00",
+  "endpoint": "https://api.p12.vn/dns-query",
+  "tls_verification_enabled": true,
+  "queries_contain_no_user_identifiers": true,
+  "results": [
+    {
+      "domain": "api.revenuecat.com",
+      "forced_ip": null,
+      "curl_exit_code": 0,
+      "http_status": "404",
+      "content_type": "text/html; charset=utf-8",
+      "response_bytes": 148,
+      "method": "GET"
+    },
+    {
+      "domain": "firebaseremoteconfig.googleapis.com",
+      "forced_ip": null,
+      "curl_exit_code": 0,
+      "http_status": "404",
+      "content_type": "text/html; charset=utf-8",
+      "response_bytes": 148,
+      "method": "GET"
+    },
+    {
+      "domain": "api.revenuecat.com",
+      "forced_ip": "1.1.1.1",
+      "curl_exit_code": 0,
+      "http_status": "403",
+      "content_type": "text/plain; charset=UTF-8",
+      "response_bytes": 17,
+      "method": "GET"
+    },
+    {
+      "domain": "api.revenuecat.com",
+      "method": "POST",
+      "forced_ip": null,
+      "curl_exit_code": 0,
+      "http_status": "404",
+      "content_type": "text/html; charset=utf-8",
+      "response_bytes": 149
+    },
+    {
+      "domain": "firebaseremoteconfig.googleapis.com",
+      "method": "POST",
+      "forced_ip": null,
+      "curl_exit_code": 0,
+      "http_status": "404",
+      "content_type": "text/html; charset=utf-8",
+      "response_bytes": 149
+    }
+  ],
+  "control": {
+    "endpoint": "https://cloudflare-dns.com/dns-query",
+    "domain": "api.revenuecat.com",
+    "method": "GET",
+    "role": "control query only, not a Gold retention service",
+    "curl_exit_code": 0,
+    "http_status": "200",
+    "content_type": "application/dns-message",
+    "response_bytes": 100,
+    "dns_id_matches": true,
+    "dns_is_response": true,
+    "dns_rcode": 0,
+    "answer_count": 4
+  },
+  "conclusion": "The tested p12 endpoint returned HTTP 404 for standard DNS-over-HTTPS GET and POST queries from this environment. Not validated on iPhone. No profile installed. No successful Gold retention test."
+}

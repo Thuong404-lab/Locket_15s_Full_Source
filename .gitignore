@@ -1,0 +1,4 @@
+# Local traffic captures may contain account identifiers and request parameters.
+proxy-*.db
+proxy-*.db-wal
+proxy-*.db-shm

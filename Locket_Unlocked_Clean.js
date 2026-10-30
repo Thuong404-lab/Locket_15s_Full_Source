@@ -501,12 +501,6 @@
                 {
                     section: "🎨 Tình yêu & Cơm chó 💕",
                     items: [
-                        { overlay_id: "caption:thuong_men_tram_lam_truc_ly", source: "remote", caption: { background: { colors: ["#FCE7F3", "#FBCFE8"] }, icon: { data: "🌷", type: "emoji" }, max_lines: 1, text: "Trầm Lâm Trúc Ly", text_color: "#831843", type: "static_content" } },
-                        { overlay_id: "caption:thuong_men_nguyen_hoang_hao", source: "remote", caption: { background: { colors: ["#DBEAFE", "#BFDBFE"] }, icon: { data: "💙", type: "emoji" }, max_lines: 1, text: "Nguyễn Hoàng Hảo", text_color: "#1E3A8A", type: "static_content" } },
-                        { overlay_id: "caption:thuong_men_nguyen_tien_thuong", source: "remote", caption: { background: { colors: ["#EDE9FE", "#DDD6FE"] }, icon: { data: "✨", type: "emoji" }, max_lines: 1, text: "Nguyễn Tiến Thương", text_color: "#4C1D95", type: "static_content" } },
-                        { overlay_id: "caption:thuong_men_ngoan_xinh_yeu", source: "remote", caption: { background: { colors: ["#FFE4E6", "#FECDD3"] }, icon: { data: "🎀", type: "emoji" }, max_lines: 1, text: "Ngoan xinh yêu của anh", text_color: "#881337", type: "static_content" } },
-                        { overlay_id: "caption:thuong_men_thich_an_mam", source: "remote", caption: { background: { colors: ["#FEF3C7", "#FDE68A"] }, icon: { data: "🍚", type: "emoji" }, max_lines: 1, text: "Thích ăn Mắm", text_color: "#78350F", type: "static_content" } },
-                        { overlay_id: "caption:thuong_men_yeu_oiiii", source: "remote", caption: { background: { colors: ["#FAE8FF", "#F5D0FE"] }, icon: { data: "💗", type: "emoji" }, max_lines: 1, text: "yêu oiiii", text_color: "#701A75", type: "static_content" } },
 
                         { overlay_id: "caption:em_nho_anhh", source: "remote", caption: { background: { colors: ["#FF6B81", "#FF8E9E", "#FFB3C6"] }, icon: { data: "🥺", type: "emoji" }, max_lines: 1, text: "em nhớ anhh", text_color: "#8C1938", type: "static_content" } },
                         { overlay_id: "caption:nho_anh_phien", source: "remote", caption: { background: { colors: ["#F0B5CB", "#F6D0DF", "#DCCAF0"] }, icon: { data: "🥺", type: "emoji" }, max_lines: 1, text: "nhớ anh tới mức hơi phiền", text_color: "#70445A", type: "static_content" } },

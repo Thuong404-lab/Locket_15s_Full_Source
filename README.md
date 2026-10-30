@@ -16,7 +16,7 @@ Giữ nguyên tám nhóm cấu hình và section `🎨 Thương mến 💌` vớ
 
 ## Lịch sử v9 — nhóm nhỏ hơn và công tắc đối chiếu
 
-Thêm section `🎨 Thương mến 💌` ngay trước `🎨 Holiday Caption`, gồm: Trầm Lâm Trúc Ly; Nguyễn Hoàng Hảo; Nguyễn Tiến Thương; Ngoan xinh yêu của anh; Thích ăn mắm; yêu oiiii. Tổng cộng **261 caption / 11 nhóm**; 255 caption cũ giữ nguyên nội dung và thứ tự.
+Section `🎨 Thương mến 💌` nằm ngay sau `🎨 Decorative by Locket`, gồm: Trầm Lâm Trúc Ly; Nguyễn Hoàng Hảo; Nguyễn Tiến Thương; Ngoan xinh yêu của anh; Thích ăn Mắm; yêu oiiii. Tổng cộng **261 caption / 11 nhóm**; 255 caption cũ giữ nguyên nội dung và thứ tự. Các bản trùng ID trong nhóm Tình yêu đã được bỏ.
 
 `LOCKET_OPTIONS` trong `Locket_Unlocked_Clean.js` có tám nhóm, mặc định đều `true` để giữ các cấu hình v7/v8, kèm section caption mới:
 
