@@ -2,7 +2,7 @@
 function rewriteLocketConfig() {
     function logStatus(message) {
         if (typeof console !== "undefined" && typeof console.log === "function") {
-            console.log("[Locket RC v6] " + message);
+            console.log("[Locket RC v7] " + message);
         }
     }
 
@@ -141,7 +141,8 @@ function rewriteLocketConfig() {
         video_sound_enabled: "true",
         microphone_enabled: "true",
         camera_microphone_enabled: "true",
-        audio_session_deactivation_enabled: "true",
+        // Audio experiment: preserve the upstream audio-session setting.
+        // The effect of this flag on received video audio is unverified.
         zoom_enabled: "true",
         upload_main: "false",
         upload_main_image_quality: "0.6",

@@ -65,6 +65,19 @@ test('sound and microphone configuration stays enabled', () => {
   for (const key of ['video_sound_enabled', 'microphone_enabled', 'camera_microphone_enabled']) assert.equal(entries[key], 'true', key);
 });
 
+test('audio experiment preserves upstream session settings without inventing a missing value', () => {
+  for (const value of ['true', 'false']) {
+    const { entries } = remoteConfig({ body: JSON.stringify({ state: 'UPDATE', entries: {
+      audio_session_deactivation_enabled: value,
+    } }) });
+    assert.equal(entries.audio_session_deactivation_enabled, value);
+    for (const key of ['video_sound_enabled', 'microphone_enabled', 'camera_microphone_enabled']) {
+      assert.equal(entries[key], 'true', key);
+    }
+  }
+  assert.equal(Object.hasOwn(remoteConfig().entries, 'audio_session_deactivation_enabled'), false);
+});
+
 test('Goofy/Looks and custom appearance UI are disabled even when upstream enables them', () => {
   const { entries } = remoteConfig({ body: JSON.stringify({ state: 'UPDATE', entries: {
     camera_filters_enabled: 'true',
@@ -158,7 +171,7 @@ test('request query does not prevent matching and diagnostics omit query secrets
   const logs = [];
   const result = remoteConfig({ url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch?key=mock-secret', logs });
   assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
-  assert.ok(logs.some((line) => line.includes('[Locket RC v6] response rewritten') && line.includes('captions=255')));
+  assert.ok(logs.some((line) => line.includes('[Locket RC v7] response rewritten') && line.includes('captions=255')));
   assert.ok(logs.every((line) => !line.includes('mock-secret')));
 });
 
@@ -180,7 +193,7 @@ test('cached states and malformed entries stay untouched and produce diagnostics
   ]) {
     const logs = [];
     assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body: JSON.stringify(input), logs }), {});
-    assert.ok(logs.some((line) => line.includes('[Locket RC v6] skipped:')));
+    assert.ok(logs.some((line) => line.includes('[Locket RC v7] skipped:')));
     assert.ok(logs.every((line) => !line.includes('mock-upstream-error')));
   }
 });

@@ -4,7 +4,17 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
-## Bản mới nhất: v6 — tắt bộ lọc/Tạo diện mạo
+## Bản mới nhất: v7 — thử nghiệm âm thanh phía nhận
+
+Bỏ ép `audio_session_deactivation_enabled = "true"`, giữ giá trị gốc từ Remote Config; nếu phản hồi không có trường này thì không thêm. Ba cờ `video_sound_enabled`, `microphone_enabled`, `camera_microphone_enabled` vẫn là `"true"`. Đây là thử nghiệm loại bỏ một override, chưa xác định ý nghĩa thực tế của cờ trong ứng dụng hoặc chứng minh sửa được lỗi mất tiếng. Không đổi các giá trị camera, thư viện, caption hay filter.
+
+Module tên `Locket 15s Photo Only - v7 Audio Experiment`, script Remote Config dùng `?v=7`, log `[Locket RC v7]`. Link tải/cập nhật module: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=7 . Cần tải lại module và script trên thiết bị để nhận bản mới; đuôi `?v=7` chỉ phân biệt URL phiên bản, không tự cập nhật script đã lưu trong máy.
+
+Sau khi cập nhật nguồn và tải lại module/script trên thiết bị, kiểm tra log `[Locket RC v7] response rewritten`. Gửi một video mới 2–3 giây có lời nói và một video dài hơn để đối chiếu. Kiểm tra tiếng ở máy gửi và máy nhận, kể cả khi lưu ra Ảnh nếu có thể. Video cũ không được sửa âm thanh bởi thay đổi này. Nếu vẫn lỗi, chưa có căn cứ tiếp tục đổi cờ ngẫu nhiên; cần file video hoặc dữ liệu chẩn đoán bước gửi/nhận. Để hoàn tác riêng thử nghiệm âm thanh, thêm lại `audio_session_deactivation_enabled: "true"` cạnh ba cờ âm thanh và phát hành lại script với URL phiên bản mới.
+
+Kiểm thử cục bộ: `node --test tests/source.test.cjs`. Test mock chỉ kiểm tra dữ liệu cấu hình, không kiểm tra ghi âm, upload hay phát video trên iPhone.
+
+## Lịch sử v6 — tắt bộ lọc/Tạo diện mạo
 
 Theo yêu cầu, tắt các cờ camera_filter, camera_filters_enabled, camera_filter_enabled, camera_filter_sheet_enabled; đặt allows_custom_filters/show_filter_button/sheet_enabled/open_sheet_immediately=false và bỏ danh sách filter Goofy/Looks cùng override bucket/cache bộ lọc. Giữ nguyên caption, camera, thư viện và âm thanh. Chưa kiểm tra giao diện trên iPhone sau cập nhật.
 
