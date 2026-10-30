@@ -38,7 +38,7 @@ test('compatible module enables all four scripts without template substitution',
   assert.equal(lines.length, 4);
   for (const line of lines) {
     assert.ok(line.includes('argument="enabled=true"'));
-    assert.match(line, /script-path=[^,\s]+\?v=10(?:,|$)/);
+    assert.match(line, /script-path=[^,\s]+\?v=11(?:,|$)/);
     const file = new URL(line.match(/script-path=([^,\s]+)/)[1]).pathname.split('/').pop();
     const argument = line.match(/argument="([^"]+)"/)[1];
     const input = { body: '{"state":"UPDATE","entries":{},"subscriber":{"subscriptions":{},"entitlements":{}}}', requestBody: '{"country_code":"vn"}' };
@@ -88,6 +88,12 @@ test('deployment readiness: script paths must be real HTTPS locations', () => {
   assert.ok(paths.every((p) => /^https:\/\//.test(p) && !p.includes('SCRIPT_BASE_URL')), 'SCRIPT_BASE_URL is still a placeholder');
 });
 
+test('profile banner override disables the upsell without requesting automatic paywalls', () => {
+  const config = JSON.parse(remoteConfig().entries.paywall_presentation_config);
+  assert.equal(config.profile_banner, false);
+  for (const key of ['onboarding', 'after_sent_moment', 'on_foreground']) assert.equal(config[key], false);
+});
+
 test('all four direct camera duration aliases are 15 seconds', () => {
   const camera = JSON.parse(remoteConfig().entries.camera);
   for (const key of ['gold_max_duration', 'goldMaxDuration', 'max_duration', 'maxDuration']) assert.equal(camera[key], 15, key);
@@ -130,7 +136,7 @@ const groupExamples = {
   widget: ['widget_frame_event', 'android_widget_frame_event_enabled', 'widget_rewind_event', 'widget_stale_state_enabled', 'widget_last_sent_indicator'],
   network: ['cdn_domain_replacements', 'storage_bucket_video', 'friends_cache_max_age_sec', 'fetch_users_from_cloud_function'],
   social: ['streak_config', 'max_friends_count', 'share_history_config', 'rollcall_enabled'],
-  appearance: ['profile_menu_v2_enabled', 'journal_settings'],
+  appearance: ['profile_menu_v2_enabled', 'journal_settings', 'paywall_presentation_config'],
   other: ['history_ads_mode', 'sentry_sample_rate', 'support_v2'],
 };
 
@@ -287,7 +293,7 @@ test('request query does not prevent matching and diagnostics omit query secrets
   const logs = [];
   const result = remoteConfig({ url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch?key=mock-secret', logs });
   assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
-  assert.ok(logs.some((line) => line.includes('[Locket RC v9] response rewritten') && line.includes('captions=261')));
+  assert.ok(logs.some((line) => line.includes('[Locket RC v11] response rewritten') && line.includes('captions=261')));
   assert.ok(logs.every((line) => !line.includes('mock-secret')));
 });
 
@@ -309,7 +315,7 @@ test('cached states and malformed entries stay untouched and produce diagnostics
   ]) {
     const logs = [];
     assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body: JSON.stringify(input), logs }), {});
-    assert.ok(logs.some((line) => line.includes('[Locket RC v9] skipped:')));
+    assert.ok(logs.some((line) => line.includes('[Locket RC v11] skipped:')));
     assert.ok(logs.every((line) => !line.includes('mock-upstream-error')));
   }
 });

@@ -4,7 +4,7 @@
         var control = typeof $argument === "string" ? /^enabled=(true|false)$/i.exec($argument.trim()) : null;
         if (!control || control[1].toLowerCase() === "false") {
             if (typeof console !== "undefined" && typeof console.log === "function") {
-                console.log("[Locket v9] bypass: " + (control ? "enabled=false" : "invalid module argument"));
+                console.log("[Locket v11] bypass: " + (control ? "enabled=false" : "invalid module argument"));
             }
             $done({});
             return;
@@ -27,7 +27,7 @@
     function rewriteLocketConfig() {
         function logStatus(message) {
             if (typeof console !== "undefined" && typeof console.log === "function") {
-                console.log("[Locket RC v9] " + message);
+                console.log("[Locket RC v11] " + message);
             }
         }
 
@@ -70,7 +70,7 @@
             if (/^widget_|^android_widget_/.test(key)) return "widget";
             if (/^cdn_|^storage_bucket|cache|^use_doc_dir_for_image_cache$|^timestamp_based_history_fetches$|^get_latest_moment|^fetch_|^refresh_interval$|^firestore_refresh|^keychain_access_retries$/.test(key)) return "network";
             if (/friend|celebrity|moment_views|moment_reactions|chat|conversation|typing|unsend|reply|messages|^groups|^group_|contacts|^rollcall|^calendar|^time_travel|yearbook|birthday|^memory_|^share_history|^streak|^catch_up/.test(key)) return "social";
-            if (/^app_icon|^profile_|^custom_profile_pics$|^lunar_|^journal_|^activity_bar_|^live_activity|^register_live_activity|^notification_|^prompt_notification|^qr_code_/.test(key)) return "appearance";
+            if (/^paywall_presentation_config$|^app_icon|^profile_|^custom_profile_pics$|^lunar_|^journal_|^activity_bar_|^live_activity|^register_live_activity|^notification_|^prompt_notification|^qr_code_/.test(key)) return "appearance";
             return "other";
         }
 
@@ -147,7 +147,7 @@
                 after_sent_moment: false,
                 on_foreground: false,
                 interval: 2592000,
-                profile_banner: true
+                profile_banner: false
             }),
             android_subscribe_gold_button_enabled: "false",
             profile_badge_visible: "true",

@@ -4,11 +4,21 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
-## Cập nhật caption mới nhất
+## Bản mới nhất: v11 — caption và banner hồ sơ
+
+Đặt `paywall_presentation_config.profile_banner=false` thay cho `true`; cấu hình này thuộc nhóm `appearance`. Đây là yêu cầu ẩn banner quảng bá Gold, không phải xác nhận ứng dụng 2.70.0 sẽ áp dụng cờ hoặc tài khoản có thuê bao Gold thật. Chưa xác minh giao diện trên iPhone và chưa sửa âm thanh phía nhận.
+
+Module và cả bốn URL script chuyển sang `?v=11`; log dùng `[Locket RC v11]` / `[Locket v11]`. Cập nhật module từ [link v11](https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=11), tải lại script nếu ứng dụng chưa tự tải, chỉ bật một module Locket rồi đóng hẳn và mở lại Locket. Xem nhóm caption `🎨 Tình yêu & Cơm chó 💕` để kiểm tra sáu mục cá nhân ở đầu nhóm.
+
+Nếu giao diện chưa đổi, kiểm tra log `[Locket RC v11] response rewritten`: log này xác nhận phản hồi đã được sửa, chưa chứng minh app áp dụng. Nếu gặp `NO_CHANGE` hoặc thông báo yêu cầu `full UPDATE`, app chưa nhận bộ cấu hình đầy đủ mới; script giữ nguyên phản hồi để tránh ghi đè cache bằng cấu hình thiếu. Không cần xóa dữ liệu hoặc cài lại app.
+
+Kiểm thử: **49/49 test mock đạt**, bao gồm cờ banner, 256 tổ hợp nhóm và caption 261 mục / 10 nhóm. Các mục bên dưới là lịch sử.
+
+## Cập nhật caption trước v11
 
 Gộp sáu caption cá nhân từ `🎨 Thương mến 💌` vào đầu nhóm `🎨 Tình yêu & Cơm chó 💕`. Tổng cộng **261 caption / 10 nhóm**; nội dung và thứ tự tương đối của 255 caption cũ được giữ nguyên. Đây là thay đổi sắp xếp caption, chưa sửa lỗi phát âm thanh phía nhận. Các mục bên dưới ghi lại lịch sử phiên bản.
 
-## Bản mới nhất: v10 — bỏ phụ thuộc vào biến tham số module
+## Lịch sử v10 — bỏ phụ thuộc vào biến tham số module
 
 Module dùng `argument="enabled=true"` trực tiếp trên cả bốn rule, bỏ `#!arguments` và biến `{{{enabled}}}`. Điều này loại bỏ trường hợp ứng dụng truyền nguyên biến chưa được thay thế làm script v9 bỏ qua sửa đổi. Log được cung cấp chỉ xác nhận có request Firebase đúng project, chưa chứng minh đây là nguyên nhân caption không hiện trên thiết bị.
 

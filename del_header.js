@@ -4,7 +4,7 @@
         var control = typeof $argument === "string" ? /^enabled=(true|false)$/i.exec($argument.trim()) : null;
         if (!control || control[1].toLowerCase() === "false") {
             if (typeof console !== "undefined" && typeof console.log === "function") {
-                console.log("[Locket v9] bypass: " + (control ? "enabled=false" : "invalid module argument"));
+                console.log("[Locket v11] bypass: " + (control ? "enabled=false" : "invalid module argument"));
             }
             $done({});
             return;
