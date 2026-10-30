@@ -4,7 +4,17 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
-## Bản mới nhất: v9 — nhóm nhỏ hơn và công tắc đối chiếu
+## Bản mới nhất: v10 — bỏ phụ thuộc vào biến tham số module
+
+Module dùng `argument="enabled=true"` trực tiếp trên cả bốn rule, bỏ `#!arguments` và biến `{{{enabled}}}`. Điều này loại bỏ trường hợp ứng dụng truyền nguyên biến chưa được thay thế làm script v9 bỏ qua sửa đổi. Log được cung cấp chỉ xác nhận có request Firebase đúng project, chưa chứng minh đây là nguyên nhân caption không hiện trên thiết bị.
+
+Tên module: `Locket 15s Photo Only - v10 Compatible Arguments`. Link cập nhật: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=10 . Tải lại module và cả bốn script; URL script chuyển sang `?v=10` để phân biệt bản tải. Nội dung bốn script không đổi nên log vẫn dùng `[Locket RC v9]` / `[Locket v9]`.
+
+Chỉ giữ một bản module Locket hoạt động. Khi cần đối chiếu, tắt toàn bộ module trong ứng dụng; bảng tham số `enabled` của v9 không còn được dùng. Các script vẫn hỗ trợ `enabled=false` khi được truyền trực tiếp, nhưng sửa một rule không tắt ba rule còn lại.
+
+Giữ nguyên tám nhóm cấu hình và section `🎨 Thương mến 💌` với sáu caption (261 caption / 11 nhóm). Kiểm thử **48/48 test mock đạt**, bao gồm chạy cả bốn script với tham số thực lấy từ module và xác nhận Remote Config xuất đủ section mới. Chưa kiểm chứng caption trên iPhone hoặc sửa được âm thanh phía nhận.
+
+## Lịch sử v9 — nhóm nhỏ hơn và công tắc đối chiếu
 
 Thêm section `🎨 Thương mến 💌` ngay trước `🎨 Holiday Caption`, gồm: Trầm Lâm Trúc Ly; Nguyễn Hoàng Hảo; Nguyễn Tiến Thương; Ngoan xinh yêu của anh; Thích ăn mắm; yêu oiiii. Tổng cộng **261 caption / 11 nhóm**; 255 caption cũ giữ nguyên nội dung và thứ tự.
 

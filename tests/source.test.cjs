@@ -30,17 +30,25 @@ function remoteConfig(options) {
   return JSON.parse(execute('Locket_Unlocked_Clean.js', options).body);
 }
 
-test('module master switch reaches all four scripts and all URLs use v9', () => {
+test('compatible module enables all four scripts without template substitution', () => {
   const moduleText = read('Locket_15s.sgmodule');
-  assert.match(moduleText, /^#!arguments=enabled:true$/m);
+  assert.ok(!moduleText.includes('{{{'));
+  assert.ok(!/^#!arguments/m.test(moduleText));
   const lines = moduleText.split(/\r?\n/).filter(line => line.includes('script-path='));
   assert.equal(lines.length, 4);
   for (const line of lines) {
-    assert.ok(line.includes('argument="enabled={{{enabled}}}"'));
-    assert.match(line, /script-path=[^,\s]+\?v=9(?:,|$)/);
+    assert.ok(line.includes('argument="enabled=true"'));
+    assert.match(line, /script-path=[^,\s]+\?v=10(?:,|$)/);
     const file = new URL(line.match(/script-path=([^,\s]+)/)[1]).pathname.split('/').pop();
-    const argument = line.match(/argument="([^"]+)"/)[1].replace('{{{enabled}}}', 'false');
-    assert.deepEqual(execute(file, { argument, body: 'not JSON', requestBody: 'not JSON' }), {});
+    const argument = line.match(/argument="([^"]+)"/)[1];
+    const input = { body: '{"state":"UPDATE","entries":{},"subscriber":{"subscriptions":{},"entitlements":{}}}', requestBody: '{"country_code":"vn"}' };
+    const result = execute(file, { ...input, argument });
+    assert.notDeepEqual(result, {}, 'The module must activate the script, not bypass it');
+    assert.deepEqual(result, execute(file, input));
+    if (file === 'Locket_Unlocked_Clean.js') {
+      const sections = JSON.parse(JSON.parse(result.body).entries.overlay_items);
+      assert.equal(sections.find(section => section.section === '🎨 Thương mến 💌').items.length, 6);
+    }
   }
 });
 
