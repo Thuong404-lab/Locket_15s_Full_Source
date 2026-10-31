@@ -1,0 +1,7 @@
+#!name=Locket - Notification Self-Test
+#!desc=Temporary independent notification test, scheduled once a minute with at most three attempts. Allow iOS notifications BEFORE enabling. Disable after testing. Scheduling on iPhone unverified.
+# Author: Nguyen Tien Thuong
+# No HTTP interception, MITM, routing changes, network calls or wake-system request.
+
+[Script]
+locket_notification_test = type=cron, cronexp="* * * * *", script-path=https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_Notification_Test.js?v=notification-test1, timeout=10

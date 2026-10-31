@@ -22,6 +22,16 @@ Thông báo chỉ chứa trạng thái nội bộ, nhóm tính năng, số capti
 
 Kiểm thử cục bộ: **61/61 test đạt**, gồm chế độ mặc định giữ nguyên kết quả rewrite, giới hạn thông báo, xử lý lỗi API thông báo/lưu trữ, phạm vi endpoint và kiểm tra không lộ dữ liệu request/response. Đây là kiểm thử mock, chưa xác nhận thông báo hay camera/caption trên iPhone.
 
+### Thử thông báo độc lập khi chưa thấy thông báo Remote Config
+
+Bật quyền thông báo Shadowrocket trong iOS **trước**, rồi nhập và bật [module Notification Self-Test](https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_Notification_Test.sgmodule?v=notification-test1) trong Modules. Giữ Shadowrocket kết nối, màn hình mở và chờ qua 1–2 mốc phút. Module dùng một tác vụ cron mỗi phút, không bật `wake-system`, không đọc request Locket, không gọi mạng và không sửa routing/MITM. Cú pháp cron tham khảo từ [cấu hình Shadowrocket của tác giả module](https://github.com/smithwhere/shadowrocket-modules/blob/main/shadowrocket.conf); lịch thực tế/parser trên phiên bản iPhone đang dùng chưa được kiểm chứng.
+
+Thông báo `Locket - thử thông báo` xác nhận tác vụ riêng đã chạy và iOS đã hiển thị thông báo đó. Không xác nhận các rule Remote Config đã chạy hoặc cấu hình camera/caption được áp dụng. Nếu vẫn không có thông báo, còn phải kiểm tra quyền hiển thị/Focus, scheduler, script tải thành công và API lưu trữ/thông báo; không suy ra Firebase không fetch.
+
+Tác vụ giới hạn **ba lần thử gọi API thông báo** cho phiên bản self-test này, bằng một bộ đếm lưu cục bộ. Lần gọi bị iOS chặn hoặc API báo lỗi vẫn tính là một lần thử; bật lại/cài lại module không xóa bộ đếm. Nếu không lưu được bộ đếm thì bỏ qua thử để bảo toàn giới hạn. **Tắt module Notification Self-Test sau phép thử** để dừng lịch chạy. Module RC chẩn đoán dùng riêng và có thể giữ bật trong lúc kiểm tra Locket.
+
+Chạy `node --test tests/*.test.cjs`: **65/65 mock test đạt**, gồm giới hạn xuyên nhiều lần chạy và hoàn tất an toàn khi API lỗi. Không phải kết quả chạy trên điện thoại.
+
 ## Kiểm tra trên Locket 2.70.0 trước v12-diag1 — 31/10/2026
 
 Người dùng xác nhận cài module và mất Gold khi tắt **toàn bộ Shadowrocket**. Bộ source chỉ sửa phản hồi trên thiết bị, không cấp thuê bao thật cho tài khoản; chưa có cơ chế giữ Gold khi tắt bộ rewrite. Bản công khai v12 khớp source local, mock **53/53 đạt**, nhưng chưa có log mới để kết luận nguyên nhân quay 3 giây và không caption trên máy người bạn.
