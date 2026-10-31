@@ -4,23 +4,28 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
-## Chẩn đoán bằng thông báo — v12-diag1
+## Sửa request và chẩn đoán bằng thông báo — v12-diag2
 
 Đã bổ sung chế độ thông báo tùy chọn cho **hai script Remote Config** để kiểm tra khi không tìm thấy màn hình console trong Shadowrocket. Đây là công cụ chẩn đoán, chưa phải bản sửa lỗi camera 3 giây/caption và chưa được kiểm thử trên iPhone. Module/profile hiện tại vẫn giữ `enabled=true`, thông báo mặc định tắt.
 
-Nhập [module chẩn đoán tùy chọn](https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_RC_Diagnostics.sgmodule?v=12-diag1) trong Shadowrocket, giữ profile DIRECT và chứng chỉ đã tin cậy hiện có. Module chỉ khai báo lại hai rule RC, dùng URL `?v=12-diag1` và argument `enabled=true&diagnostics=true`; kế thừa routing/MITM từ profile. Chưa kiểm thử việc kết hợp module/profile trên iPhone. Cần cho phép thông báo Shadowrocket trong iOS để nhìn thấy thông báo.
+Bản diag2 sửa một lỗi có thể tái hiện: trước đây việc bỏ `If-None-Match` nằm sau bước parse JSON nên bị bỏ qua nếu request body không đọc được. [Firebase Apple SDK gửi body gzip và ETag riêng trong header](https://github.com/firebase/firebase-ios-sdk/blob/main/FirebaseRemoteConfig/Sources/RCNConfigFetch.m). Script mới bỏ ETag trên POST fetch đúng project trước khi đọc body. Nếu body là dữ liệu nén/byte, thiếu hoặc không phải object JSON hợp lệ, chỉ trả header khi thực sự bỏ ETag; giữ nguyên body, header mã hóa, độ dài và xác thực. Không coi typed array/ArrayBuffer là object JSON. Chưa có request body trên điện thoại để chứng minh đây là nguyên nhân lỗi của người dùng.
+
+Thông báo từ lượt mở Locket trên thiết bị đã ghi `skipped: full UPDATE with entries required`. Điều này xác nhận script response được gọi; dòng cũ chưa phân biệt được `NO_CHANGE`, trạng thái khác hay `entries` không hợp lệ. Diag2 bổ sung nhãn state theo danh sách cho phép, kiểu/số lượng entries và mã HTTP (hoặc `unknown`), không sao chép dữ liệu gốc. Ví dụ: `state=NO_CHANGE; entries=missing; http=200; diagnostic=v12-diag2`. Chỉ coi đây là ví dụ, chưa phải state đã ghi nhận trên thiết bị. Giữ nguyên điều kiện chỉ sửa phản hồi UPDATE có entries hợp lệ.
+
+Nhập [module chẩn đoán tùy chọn](https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_RC_Diagnostics.sgmodule?v=12-diag2) trong Shadowrocket, giữ profile DIRECT và chứng chỉ đã tin cậy hiện có. Module chỉ khai báo lại hai rule RC, dùng URL `?v=12-diag2` và argument `enabled=true&diagnostics=true`; kế thừa routing/MITM từ profile. Chưa kiểm thử việc kết hợp module/profile trên iPhone. Cần cho phép thông báo Shadowrocket trong iOS để nhìn thấy thông báo.
 
 Hoặc đổi **riêng** argument của `locket_rc` và `locket_rc_us` thành `enabled=true&diagnostics=true` rồi tải lại mã mới. Giữ nguyên argument của `revenuecat` và `deleteHeader`. Chỉ bật chế độ khi điện thoại đã có mã mới, vì bản v12 cũ sẽ bỏ qua argument mở rộng này.
 
 - `Request: rewritten`: đã bắt được request fetch đúng project và sửa request để yêu cầu cấu hình đầy đủ; chưa xác nhận phản hồi.
+- `Request: headers-refreshed`: đã bỏ ETag và giữ nguyên body chưa đọc được; chưa xác nhận server trả cấu hình đầy đủ.
 - `Response: rewritten`: đã sửa phản hồi; nội dung nêu `camera=15s`, `captions=261` nếu hai nhóm đó được bật. Chưa xác nhận Locket activate hoặc hiển thị cấu hình.
 - `Request: skipped` / `Response: skipped`: đã gọi script nhưng dữ liệu không đủ điều kiện sửa; xem lý do đi kèm. `NO_CHANGE` và phản hồi lỗi vẫn giữ nguyên.
 
-Thông báo chỉ chứa trạng thái nội bộ, nhóm tính năng, số caption và mã hash cấu hình. Không đưa URL/query, header, token, body gốc hoặc nội dung caption vào thông báo. Nếu có API lưu trữ, mỗi loại thông báo được giới hạn một lần/phút; chỉ lưu timestamp, tách request/response và rewritten/skipped. Không có thông báo **không chứng minh** không có request: còn phụ thuộc quyền thông báo, mã đang tải, rule/MITM và khoảng giới hạn này. Công cụ không ép được SDK gửi fetch.
+Thông báo chỉ chứa nhãn trạng thái, kiểu/số lượng entries, mã HTTP, nhóm tính năng, số caption và mã hash cấu hình. Không đưa URL/query, header, token, body gốc hoặc nội dung caption vào thông báo. Nếu có API lưu trữ, mỗi loại thông báo được giới hạn một lần/phút; chỉ lưu timestamp, tách request/response và từng loại kết quả. Không có thông báo **không chứng minh** không có request: còn phụ thuộc quyền thông báo, mã đang tải, rule/MITM và khoảng giới hạn này. Công cụ không ép được SDK gửi fetch.
 
 Để tắt thông báo, tắt module chẩn đoán, hoặc trả argument của hai script về `enabled=true` nếu đã sửa trực tiếp. Cập nhật nguồn tải không tự thay mã đã lưu trên điện thoại.
 
-Kiểm thử cục bộ: **61/61 test đạt**, gồm chế độ mặc định giữ nguyên kết quả rewrite, giới hạn thông báo, xử lý lỗi API thông báo/lưu trữ, phạm vi endpoint và kiểm tra không lộ dữ liệu request/response. Đây là kiểm thử mock, chưa xác nhận thông báo hay camera/caption trên iPhone.
+Kiểm thử cục bộ: **70/70 test đạt** khi chạy cả hai file test, gồm bỏ ETag với body gzip/byte/thiếu, bảo toàn body/header gốc, phạm vi endpoint, phân loại response không lộ dữ liệu, giới hạn thông báo và xử lý lỗi API. Đây là kiểm thử mock, chưa xác nhận sửa camera/caption trên iPhone.
 
 ### Thử thông báo độc lập khi chưa thấy thông báo Remote Config
 
@@ -30,7 +35,7 @@ Thông báo `Locket - thử thông báo` xác nhận tác vụ riêng đã chạ
 
 Tác vụ giới hạn **ba lần thử gọi API thông báo** cho phiên bản self-test này, bằng một bộ đếm lưu cục bộ. Lần gọi bị iOS chặn hoặc API báo lỗi vẫn tính là một lần thử; bật lại/cài lại module không xóa bộ đếm. Nếu không lưu được bộ đếm thì bỏ qua thử để bảo toàn giới hạn. **Tắt module Notification Self-Test sau phép thử** để dừng lịch chạy. Module RC chẩn đoán dùng riêng và có thể giữ bật trong lúc kiểm tra Locket.
 
-Chạy `node --test tests/*.test.cjs`: **65/65 mock test đạt**, gồm giới hạn xuyên nhiều lần chạy và hoàn tất an toàn khi API lỗi. Không phải kết quả chạy trên điện thoại.
+Script tự thử đã hiển thị thông báo trên thiết bị do người dùng gửi ảnh xác nhận. Điều đó xác nhận script thử chạy và API thông báo có hiển thị kết quả; chưa xác nhận hai rule RC chạy hoặc camera/caption được áp dụng. Các mock test kiểm tra giới hạn xuyên nhiều lần chạy và hoàn tất an toàn khi API lỗi.
 
 ## Kiểm tra trên Locket 2.70.0 trước v12-diag1 — 31/10/2026
 

@@ -51,6 +51,25 @@
             }
         }
 
+        function describeResponseShape(value) {
+            // Only allowlisted labels and counts: never echo upstream values,
+            // parameter names, URLs, headers, error messages or response bodies.
+            var has = Object.prototype.hasOwnProperty;
+            var states = ["UPDATE", "NO_CHANGE", "EMPTY_CONFIG", "NO_TEMPLATE"];
+            var state = !has.call(value, "state") ? "missing" : states.indexOf(value.state) >= 0 ? value.state : "other";
+            var entries = !has.call(value, "entries") ? "missing" : value.entries === null ? "null" : Array.isArray(value.entries) ? "array" : typeof value.entries;
+            if (entries === "object") entries += "(" + Object.keys(value.entries).length + ")";
+            var rawStatus = $response.status;
+            var status = "unknown";
+            if (typeof rawStatus === "number" && rawStatus >= 100 && rawStatus <= 599 && Math.floor(rawStatus) === rawStatus) {
+                status = String(rawStatus);
+            } else if (typeof rawStatus === "string") {
+                var match = /^(?:HTTP\/\d(?:\.\d)?\s+)?([1-5]\d\d)(?:\s|$)/.exec(rawStatus);
+                if (match) status = match[1];
+            }
+            return "state=" + state + "; entries=" + entries + "; http=" + status + "; diagnostic=v12-diag2";
+        }
+
         // Scope by project and fetch endpoint, not by the app/SDK User-Agent.
         var target = /^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch(?:\?|$)/;
         if (!target.test($request.url || "")) {
@@ -72,7 +91,7 @@
         // NO_CHANGE has no complete config. Turning it into UPDATE could discard
         // unrelated settings from the app's cache. Leave it intact and report it.
         if (obj.state !== "UPDATE" || !obj.entries || typeof obj.entries !== "object" || Array.isArray(obj.entries)) {
-            logStatus("skipped: full UPDATE with entries required (possibly cached response)");
+            logStatus("skipped: full UPDATE with entries required; " + describeResponseShape(obj));
             return {};
         }
         var activeGroups = Object.keys(LOCKET_OPTIONS).filter(function (group) {

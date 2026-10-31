@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { createHash } = require('node:crypto');
+const { gzipSync } = require('node:zlib');
 const { test } = require('node:test');
 
 const root = path.resolve(__dirname, '..');
@@ -10,7 +11,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const scripts = ['Locket.js', 'del_header.js', 'Locket_Unlocked_Clean.js', 'Locket_rc_us.js'];
 
 // Run only local source with mocked proxy globals. No network or device access.
-function execute(file, { headers = { 'User-Agent': 'Locket/1.0' }, responseHeaders, body = '{"state":"UPDATE","entries":{}}', requestBody, method = 'POST', url = 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch', logs = [], options, argument, notification, persistentStore, now } = {}) {
+function execute(file, { headers = { 'User-Agent': 'Locket/1.0' }, responseHeaders, responseStatus, body = '{"state":"UPDATE","entries":{}}', requestBody, method = 'POST', url = 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch', logs = [], options, argument, notification, persistentStore, now } = {}) {
   const completions = [];
   let source = read(file);
   if (options) source = source.replace('function rewriteLocketConfig()',
@@ -21,7 +22,7 @@ function execute(file, { headers = { 'User-Agent': 'Locket/1.0' }, responseHeade
     $notification: notification,
     $persistentStore: persistentStore,
     $request: { headers, method, body: requestBody, url },
-    $response: { body, headers: responseHeaders },
+    $response: { body, headers: responseHeaders, status: responseStatus },
     console: { log: (message) => logs.push(message) },
     $done: (value) => completions.push(JSON.parse(JSON.stringify(value))),
   }, { timeout: 1000, filename: file });
@@ -374,6 +375,50 @@ test('config fetch refresh is scoped and does not rewrite malformed bodies', () 
   assert.equal(JSON.parse(execute('Locket_rc_us.js', { headers: null, requestBody: '{}' }).body).country_code, 'us');
 });
 
+test('config fetch removes conditional headers without decoding gzip, malformed or absent bodies', () => {
+  const compressed = new Uint8Array(gzipSync(Buffer.from('{"token":"mock-compressed-secret","country_code":"vn"}')));
+  const before = Array.from(compressed);
+  const headers = {
+    'If-None-Match': 'old', 'if-none-match': 'duplicate',
+    'Content-Encoding': 'gzip', 'Content-Length': String(compressed.length),
+    Authorization: 'mock-private-header',
+  };
+  const original = { ...headers };
+  for (const requestBody of [compressed, compressed.buffer, '\u001f\u008bopaque-gzip', 'broken', '[]', 'null', undefined, '']) {
+    const notifications = [];
+    const output = execute('Locket_rc_us.js', {
+      headers, requestBody, argument: 'enabled=true&diagnostics=true',
+      notification: { post: (...args) => notifications.push(args) },
+    });
+    assert.deepEqual(output, { headers: {
+      'Content-Encoding': 'gzip', 'Content-Length': String(compressed.length), Authorization: 'mock-private-header',
+    } });
+    assert.ok(!Object.hasOwn(output, 'body'));
+    assert.equal(notifications.length, 1);
+    assert.equal(notifications[0][1], 'Request: headers-refreshed');
+    assert.ok(!JSON.stringify(notifications).includes('mock-'));
+    assert.deepEqual(headers, original);
+    assert.deepEqual(Array.from(compressed), before);
+  }
+});
+
+test('opaque body header refresh remains scoped to POST and the exact config fetch endpoint', () => {
+  const headers = { 'If-None-Match': 'preserve' };
+  for (const input of [
+    { method: 'GET' },
+    { url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/other-app/namespaces/firebase:fetch' },
+    { url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetchOther' },
+  ]) assert.deepEqual(execute('Locket_rc_us.js', { ...input, headers, requestBody: 'opaque' }), {});
+  assert.deepEqual(headers, { 'If-None-Match': 'preserve' });
+});
+
+test('decoded object request bodies are rewritten without mutating the caller object', () => {
+  const requestBody = { country_code: 'vn', token: 'mock-private-token' };
+  const output = execute('Locket_rc_us.js', { requestBody });
+  assert.deepEqual(JSON.parse(output.body), { country_code: 'us', time_zone: 'America/New_York', token: 'mock-private-token' });
+  assert.deepEqual(requestBody, { country_code: 'vn', token: 'mock-private-token' });
+});
+
 test('rewritten config validators identify changed content and preserve unrelated response headers', () => {
   const responseHeaders = { ETag: 'upstream', etag: 'duplicate', 'Content-Type': 'application/json', 'X-Sentinel': 'keep' };
   const original = { ...responseHeaders };
@@ -410,7 +455,7 @@ test('optional diagnostic module activates only the two existing RC rules and in
   for (const line of lines) {
     const scriptUrl = new URL(line.match(/script-path=([^,\s]+)/)[1]);
     assert.equal(scriptUrl.origin, 'https://raw.githubusercontent.com');
-    assert.equal(scriptUrl.search, '?v=12-diag1');
+    assert.equal(scriptUrl.search, '?v=12-diag2');
     const file = scriptUrl.pathname.split('/').pop();
     const notifications = [];
     const argument = line.match(/argument="([^"]+)"/)[1];
@@ -522,6 +567,47 @@ test('invalid or absent full response still passes through exactly once with dia
     assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body, argument: 'enabled=true&diagnostics=true', notification: { post: (...args) => notifications.push(args) } }), {});
     assert.equal(notifications.length, 1);
     assert.equal(notifications[0][1], 'Response: skipped');
+  }
+});
+
+test('skip diagnostics distinguish known states and entries shapes without disclosing upstream data', () => {
+  const cases = [
+    [{ state: 'NO_CHANGE' }, 'state=NO_CHANGE; entries=missing'],
+    [{ state: 'EMPTY_CONFIG' }, 'state=EMPTY_CONFIG; entries=missing'],
+    [{ state: 'NO_TEMPLATE' }, 'state=NO_TEMPLATE; entries=missing'],
+    [{ state: 'UPDATE' }, 'state=UPDATE; entries=missing'],
+    [{ state: 'UPDATE', entries: null }, 'state=UPDATE; entries=null'],
+    [{ state: 'UPDATE', entries: [] }, 'state=UPDATE; entries=array'],
+    [{ state: 'UPDATE', entries: 'mock-private-entry' }, 'state=UPDATE; entries=string'],
+    [{ entries: { 'mock-private-key': 'mock-private-value' } }, 'state=missing; entries=object(1)'],
+    [{ state: 'mock-private-state', entries: {} }, 'state=other; entries=object(0)'],
+    [{ state: { secret: 'mock-private-state' }, entries: 42 }, 'state=other; entries=number'],
+  ];
+  for (const [input, expected] of cases) {
+    const notifications = [];
+    const logs = [];
+    assert.deepEqual(execute('Locket_Unlocked_Clean.js', {
+      body: JSON.stringify(input), responseStatus: 200, argument: 'enabled=true&diagnostics=true', logs,
+      notification: { post: (...args) => notifications.push(args) },
+    }), {});
+    assert.equal(notifications.length, 1);
+    assert.ok(notifications[0][2].includes(expected));
+    assert.match(notifications[0][2], /http=200; diagnostic=v12-diag2/);
+    assert.ok(!JSON.stringify({ notifications, logs }).includes('mock-private'));
+    assert.ok(!notifications[0][2].includes('possibly cached'));
+  }
+});
+
+test('skip diagnostics normalize HTTP status to a code or unknown without echoing status text', () => {
+  for (const [responseStatus, expected] of [
+    [200, '200'], ['200', '200'], ['HTTP/1.1 200 OK', '200'], ['HTTP/2 429 mock-private-reason', '429'],
+    [undefined, 'unknown'], [null, 'unknown'], [200.5, 'unknown'], [999, 'unknown'],
+    ['mock-private-200', 'unknown'], [{ status: 'mock-private-status' }, 'unknown'],
+  ]) {
+    const logs = [];
+    assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body: '{"state":"NO_CHANGE"}', responseStatus, logs }), {});
+    assert.ok(logs.some(line => line.includes('http=' + expected + ';')));
+    assert.ok(logs.every(line => !line.includes('mock-private')));
   }
 });
 

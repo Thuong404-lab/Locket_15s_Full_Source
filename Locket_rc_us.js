@@ -31,39 +31,51 @@ function notifyDiagnostic(outcome, message) {
     }
 }
 var target = /^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch(?:\?|$)/;
-if (target.test($request.url || "") && $request.method === "POST" && $request.body) {
-    try {
-        var body = typeof $request.body === "string" ? JSON.parse($request.body) : $request.body;
-
-        if (body && typeof body === "object" && !Array.isArray(body)) {
-            body.country_code = "us";
-            body.time_zone = "America/New_York";
-            // body.language_code = "en_US";
-            // Ask for a full config on actual fetches so a cached NO_CHANGE
-            // does not prevent the response script from applying new captions.
-            // This cannot bypass the SDK's local minimum fetch interval.
-            var headers = Object.assign({}, $request.headers || {});
-            Object.keys(headers).forEach(function (key) {
-                if (key.toLowerCase() === "if-none-match") delete headers[key];
-            });
-            if (typeof console !== "undefined" && typeof console.log === "function") {
-                console.log("[Locket RC v12] request rewritten: full config requested");
-            }
-            notifyDiagnostic("rewritten", "Đã bắt được lượt tải Remote Config và yêu cầu cấu hình đầy đủ. Chưa xác nhận phản hồi hoặc giao diện Locket.");
-            $done({ body: JSON.stringify(body), headers: headers });
-        } else {
-            notifyDiagnostic("skipped", "Đã bắt được request nhưng body không phải object JSON hợp lệ; giữ nguyên request.");
-            $done({});
+function rewriteConfigRequest() {
+    if (!target.test($request.url || "")) return {};
+    if ($request.method !== "POST") {
+        notifyDiagnostic("skipped", "Đã gọi script đúng endpoint nhưng request không phải POST; giữ nguyên request.");
+        return {};
+    }
+    // Conditional fetch headers are independent of body decoding. Firebase's
+    // Apple SDK sends gzip: an opaque/missing body must not prevent removing ETag.
+    // Returning only headers preserves the original bytes and encoding headers.
+    var headers = Object.assign({}, $request.headers || {});
+    var removedETag = false;
+    Object.keys(headers).forEach(function (key) {
+        if (key.toLowerCase() === "if-none-match") {
+            delete headers[key];
+            removedETag = true;
         }
+    });
+    var decoded;
+    try {
+        decoded = typeof $request.body === "string" ? JSON.parse($request.body) : $request.body;
     } catch (e) {
-        notifyDiagnostic("skipped", "Không đọc được JSON của request; giữ nguyên request.");
-        $done({});
+        // Header refresh remains possible without reading or changing the body.
     }
-} else {
-    if (target.test($request.url || "")) {
-        notifyDiagnostic("skipped", "Đã gọi script đúng endpoint nhưng request không có POST/body cần thiết; giữ nguyên request.");
+    // Typed arrays/ArrayBuffers are opaque bytes, not decoded JSON objects.
+    if (decoded && Object.prototype.toString.call(decoded) === "[object Object]") {
+        var body = Object.assign({}, decoded);
+        body.country_code = "us";
+        body.time_zone = "America/New_York";
+        // This cannot bypass the SDK's local minimum fetch interval.
+        if (typeof console !== "undefined" && typeof console.log === "function") {
+            console.log("[Locket RC v12] request rewritten: full config requested");
+        }
+        notifyDiagnostic("rewritten", "Đã bắt được lượt tải Remote Config và yêu cầu cấu hình đầy đủ. Chưa xác nhận phản hồi hoặc giao diện Locket.");
+        return { body: JSON.stringify(body), headers: headers };
     }
-    $done({});
+    if (removedETag) {
+        if (typeof console !== "undefined" && typeof console.log === "function") {
+            console.log("[Locket RC v12] request headers rewritten: conditional ETag removed; original body preserved");
+        }
+        notifyDiagnostic("headers-refreshed", "Đã bỏ If-None-Match để yêu cầu cấu hình đầy đủ; giữ nguyên body chưa đọc được và các header khác. Chưa xác nhận phản hồi.");
+        return { headers: headers };
+    }
+    notifyDiagnostic("skipped", "Không có body JSON hợp lệ hoặc ETag cần bỏ; giữ nguyên request.");
+    return {};
 }
+$done(rewriteConfigRequest());
 
 })();
