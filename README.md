@@ -4,7 +4,25 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
-## Kiểm tra trên Locket 2.70.0 — 31/10/2026
+## Chẩn đoán bằng thông báo — v12-diag1
+
+Đã bổ sung chế độ thông báo tùy chọn cho **hai script Remote Config** để kiểm tra khi không tìm thấy màn hình console trong Shadowrocket. Đây là công cụ chẩn đoán, chưa phải bản sửa lỗi camera 3 giây/caption và chưa được kiểm thử trên iPhone. Module/profile hiện tại vẫn giữ `enabled=true`, thông báo mặc định tắt.
+
+Nhập [module chẩn đoán tùy chọn](https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_RC_Diagnostics.sgmodule?v=12-diag1) trong Shadowrocket, giữ profile DIRECT và chứng chỉ đã tin cậy hiện có. Module chỉ khai báo lại hai rule RC, dùng URL `?v=12-diag1` và argument `enabled=true&diagnostics=true`; kế thừa routing/MITM từ profile. Chưa kiểm thử việc kết hợp module/profile trên iPhone. Cần cho phép thông báo Shadowrocket trong iOS để nhìn thấy thông báo.
+
+Hoặc đổi **riêng** argument của `locket_rc` và `locket_rc_us` thành `enabled=true&diagnostics=true` rồi tải lại mã mới. Giữ nguyên argument của `revenuecat` và `deleteHeader`. Chỉ bật chế độ khi điện thoại đã có mã mới, vì bản v12 cũ sẽ bỏ qua argument mở rộng này.
+
+- `Request: rewritten`: đã bắt được request fetch đúng project và sửa request để yêu cầu cấu hình đầy đủ; chưa xác nhận phản hồi.
+- `Response: rewritten`: đã sửa phản hồi; nội dung nêu `camera=15s`, `captions=261` nếu hai nhóm đó được bật. Chưa xác nhận Locket activate hoặc hiển thị cấu hình.
+- `Request: skipped` / `Response: skipped`: đã gọi script nhưng dữ liệu không đủ điều kiện sửa; xem lý do đi kèm. `NO_CHANGE` và phản hồi lỗi vẫn giữ nguyên.
+
+Thông báo chỉ chứa trạng thái nội bộ, nhóm tính năng, số caption và mã hash cấu hình. Không đưa URL/query, header, token, body gốc hoặc nội dung caption vào thông báo. Nếu có API lưu trữ, mỗi loại thông báo được giới hạn một lần/phút; chỉ lưu timestamp, tách request/response và rewritten/skipped. Không có thông báo **không chứng minh** không có request: còn phụ thuộc quyền thông báo, mã đang tải, rule/MITM và khoảng giới hạn này. Công cụ không ép được SDK gửi fetch.
+
+Để tắt thông báo, tắt module chẩn đoán, hoặc trả argument của hai script về `enabled=true` nếu đã sửa trực tiếp. Cập nhật nguồn tải không tự thay mã đã lưu trên điện thoại.
+
+Kiểm thử cục bộ: **61/61 test đạt**, gồm chế độ mặc định giữ nguyên kết quả rewrite, giới hạn thông báo, xử lý lỗi API thông báo/lưu trữ, phạm vi endpoint và kiểm tra không lộ dữ liệu request/response. Đây là kiểm thử mock, chưa xác nhận thông báo hay camera/caption trên iPhone.
+
+## Kiểm tra trên Locket 2.70.0 trước v12-diag1 — 31/10/2026
 
 Người dùng xác nhận cài module và mất Gold khi tắt **toàn bộ Shadowrocket**. Bộ source chỉ sửa phản hồi trên thiết bị, không cấp thuê bao thật cho tài khoản; chưa có cơ chế giữ Gold khi tắt bộ rewrite. Bản công khai v12 khớp source local, mock **53/53 đạt**, nhưng chưa có log mới để kết luận nguyên nhân quay 3 giây và không caption trên máy người bạn.
 

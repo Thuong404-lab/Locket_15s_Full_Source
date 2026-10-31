@@ -1,0 +1,9 @@
+#!name=Locket RC - Diagnostic Notifications
+#!desc=Temporary Remote Config notifications. Use with your existing Locket DIRECT profile and trusted MITM certificate. Allow Shadowrocket notifications in iOS. Device behavior unverified.
+# Author: Nguyen Tien Thuong
+# Overrides the two existing RC rules; inherits routing and MITM from the profile.
+# Disable this module after diagnosis to restore the profile's normal RC rules.
+
+[Script]
+locket_rc = type=http-response, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/.+, script-path=https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_Unlocked_Clean.js?v=12-diag1, requires-body=true, max-size=-1, timeout=60, argument="enabled=true&diagnostics=true"
+locket_rc_us = type=http-request, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch, requires-body=1, max-size=0, script-path=https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_rc_us.js?v=12-diag1, timeout=10, argument="enabled=true&diagnostics=true"

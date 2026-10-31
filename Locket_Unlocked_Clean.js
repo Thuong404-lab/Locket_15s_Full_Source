@@ -1,7 +1,8 @@
 // Shared module control: enabled=false bypasses every rewrite in this script.
 (function () {
+    var diagnosticsEnabled = false;
     if (typeof $argument !== "undefined") {
-        var control = typeof $argument === "string" ? /^enabled=(true|false)$/i.exec($argument.trim()) : null;
+        var control = typeof $argument === "string" ? /^enabled=(true|false)(?:&diagnostics=(true|false))?$/i.exec($argument.trim()) : null;
         if (!control || control[1].toLowerCase() === "false") {
             if (typeof console !== "undefined" && typeof console.log === "function") {
                 console.log("[Locket v12] bypass: " + (control ? "enabled=false" : "invalid module argument"));
@@ -9,6 +10,7 @@
             $done({});
             return;
         }
+        diagnosticsEnabled = !!control[2] && control[2].toLowerCase() === "true";
     }
     // Author: Nguyen Tien Thuong
     // true = apply this group's overrides; false = preserve Locket's config.
@@ -28,6 +30,24 @@
         function logStatus(message) {
             if (typeof console !== "undefined" && typeof console.log === "function") {
                 console.log("[Locket RC v12] " + message);
+            }
+            // Notifications are opt-in and only describe this project's fetch.
+            // Never include request URLs, headers, upstream values or captions.
+            if (!diagnosticsEnabled || !target.test($request.url || "")) return;
+            try {
+                if (typeof $notification === "undefined" || typeof $notification.post !== "function") return;
+                var outcome = message.indexOf("response rewritten:") === 0 ? "rewritten" : "skipped";
+                var key = "locket.rc.diagnostics.response." + outcome;
+                var now = Date.now();
+                var store = typeof $persistentStore !== "undefined" ? $persistentStore : null;
+                if (store && typeof store.read === "function") {
+                    var last = Number(store.read(key));
+                    if (last > 0 && now >= last && now - last < 60000) return;
+                }
+                $notification.post("Locket RC - chẩn đoán", "Response: " + outcome, message);
+                if (store && typeof store.write === "function") store.write(String(now), key);
+            } catch (e) {
+                // Diagnostic API/storage failures must not block the rewrite.
             }
         }
 

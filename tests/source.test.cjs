@@ -10,13 +10,16 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const scripts = ['Locket.js', 'del_header.js', 'Locket_Unlocked_Clean.js', 'Locket_rc_us.js'];
 
 // Run only local source with mocked proxy globals. No network or device access.
-function execute(file, { headers = { 'User-Agent': 'Locket/1.0' }, responseHeaders, body = '{"state":"UPDATE","entries":{}}', requestBody, method = 'POST', url = 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch', logs = [], options, argument } = {}) {
+function execute(file, { headers = { 'User-Agent': 'Locket/1.0' }, responseHeaders, body = '{"state":"UPDATE","entries":{}}', requestBody, method = 'POST', url = 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch', logs = [], options, argument, notification, persistentStore, now } = {}) {
   const completions = [];
   let source = read(file);
   if (options) source = source.replace('function rewriteLocketConfig()',
     `Object.assign(LOCKET_OPTIONS, ${JSON.stringify(options)});\nfunction rewriteLocketConfig()`);
   vm.runInNewContext(source, {
     ...(argument === undefined ? {} : { $argument: argument }),
+    ...(now === undefined ? {} : { Date: { now: () => now } }),
+    $notification: notification,
+    $persistentStore: persistentStore,
     $request: { headers, method, body: requestBody, url },
     $response: { body, headers: responseHeaders },
     console: { log: (message) => logs.push(message) },
@@ -394,6 +397,132 @@ test('caption diagnostics confirm all six personal items without exposing their 
   assert.equal(items.filter(item => item.overlay_id.startsWith('caption:thuong_men_')).length, 6);
   assert.ok(logs.some(line => line.includes('personal-captions=6') && line.includes('config-tag=')));
   assert.ok(logs.every(line => !line.includes('mock-secret') && !line.includes('Trầm Lâm Trúc Ly')));
+});
+
+const configScripts = ['Locket_rc_us.js', 'Locket_Unlocked_Clean.js'];
+const diagnosticInput = { requestBody: '{"token":"mock-body-secret"}' };
+
+test('optional diagnostic module activates only the two existing RC rules and inherits MITM/routing', () => {
+  const moduleText = read('Locket_RC_Diagnostics.sgmodule');
+  assert.ok(!/^\[(MITM|Rule|General)\]/m.test(moduleText));
+  const lines = moduleText.split(/\r?\n/).filter(line => line.includes('script-path='));
+  assert.deepEqual(lines.map(line => line.split(' = ')[0]), ['locket_rc', 'locket_rc_us']);
+  for (const line of lines) {
+    const scriptUrl = new URL(line.match(/script-path=([^,\s]+)/)[1]);
+    assert.equal(scriptUrl.origin, 'https://raw.githubusercontent.com');
+    assert.equal(scriptUrl.search, '?v=12-diag1');
+    const file = scriptUrl.pathname.split('/').pop();
+    const notifications = [];
+    const argument = line.match(/argument="([^"]+)"/)[1];
+    assert.equal(argument, 'enabled=true&diagnostics=true');
+    assert.deepEqual(execute(file, { ...diagnosticInput, argument, notification: { post: (...args) => notifications.push(args) } }), execute(file, diagnosticInput));
+    assert.equal(notifications.length, 1);
+  }
+});
+
+test('config notifications are opt-in and leave rewrite output unchanged', () => {
+  for (const file of configScripts) {
+    const expected = execute(file, diagnosticInput);
+    const notifications = [];
+    const forbiddenStore = { read() { assert.fail('Diagnostics disabled'); }, write() { assert.fail('Diagnostics disabled'); } };
+    for (const argument of [undefined, 'enabled=true', 'enabled=true&diagnostics=false']) {
+      assert.deepEqual(execute(file, { ...diagnosticInput, argument, notification: { post: (...args) => notifications.push(args) }, persistentStore: forbiddenStore }), expected);
+    }
+    assert.equal(notifications.length, 0);
+    assert.deepEqual(execute(file, { ...diagnosticInput, argument: 'enabled=true&diagnostics=true', notification: { post: (...args) => notifications.push(args) } }), expected);
+    assert.equal(notifications.length, 1);
+    assert.match(notifications[0][1], /rewritten/);
+    if (file === 'Locket_Unlocked_Clean.js') assert.match(notifications[0][2], /camera=15s.*captions=261/);
+  }
+});
+
+test('diagnostic bypass remains fail-closed before reading any traffic or notifying', () => {
+  for (const file of configScripts) {
+    for (const argument of ['enabled=false&diagnostics=true', 'enabled=true&diagnostics=invalid', 'enabled=true&diagnostics=true&unknown=true']) {
+      const completions = [];
+      vm.runInNewContext(read(file), {
+        $argument: argument,
+        $notification: { post() { assert.fail('Bypassed script must not notify'); } },
+        $done(value) { completions.push(JSON.parse(JSON.stringify(value))); },
+      });
+      assert.deepEqual(completions, [{}]);
+    }
+  }
+});
+
+test('config notifications do not expose URL queries, headers, bodies or caption text', () => {
+  for (const file of configScripts) {
+    const notifications = [];
+    const writes = [];
+    const notification = { post: (...args) => notifications.push(args) };
+    const persistentStore = { read() { return null; }, write: (...args) => writes.push(args) };
+    const input = {
+      ...diagnosticInput, argument: 'enabled=true&diagnostics=true', notification, persistentStore,
+      url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch?key=mock-query-secret',
+      headers: { Authorization: 'mock-header-secret' },
+      body: '{"state":"UPDATE","entries":{"secret":"mock-response-secret"}}',
+    };
+    execute(file, input);
+    execute(file, { ...input, requestBody: 'mock-invalid-secret', body: '{"error":{"message":"mock-error-secret"}}' });
+    const exposed = JSON.stringify({ notifications, writes });
+    for (const secret of ['mock-query-secret', 'mock-header-secret', 'mock-body-secret', 'mock-response-secret', 'mock-invalid-secret', 'mock-error-secret', 'Trầm Lâm Trúc Ly']) assert.ok(!exposed.includes(secret));
+    assert.equal(notifications.length, 2);
+    assert.ok(writes.every(([value]) => /^\d+$/.test(value)));
+  }
+});
+
+test('diagnostics only notify for the configured project and fetch endpoint', () => {
+  for (const file of configScripts) {
+    for (const url of [
+      'https://firebaseremoteconfig.googleapis.com/v1/projects/other-app/namespaces/firebase:fetch',
+      'https://firebaseremoteconfig.googleapis.com.evil.test/v1/projects/locket-4252a/namespaces/firebase:fetch',
+      'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetchOther',
+    ]) assert.deepEqual(execute(file, {
+      ...diagnosticInput, url, argument: 'enabled=true&diagnostics=true',
+      notification: { post() { assert.fail('Unrelated request must not notify'); } },
+      persistentStore: { read() { assert.fail('Unrelated request must not read storage'); } },
+    }), {});
+  }
+});
+
+test('notification throttling separates request/response and skipped/rewritten outcomes', () => {
+  const state = new Map();
+  const notifications = [];
+  const persistentStore = { read: key => state.get(key), write: (value, key) => state.set(key, value) };
+  const notification = { post: (...args) => notifications.push(args) };
+  for (const file of configScripts) {
+    const input = { ...diagnosticInput, argument: 'enabled=true&diagnostics=true', notification, persistentStore, now: 100000 };
+    execute(file, input);
+    execute(file, { ...input, now: 100001 });
+    execute(file, { ...input, requestBody: 'invalid', body: '{"state":"NO_CHANGE"}', now: 100002 });
+    execute(file, { ...input, now: 160000 });
+  }
+  assert.equal(notifications.length, 6);
+  assert.equal(state.size, 4);
+  assert.ok(notifications.some(([, subtitle]) => subtitle === 'Request: skipped'));
+  assert.ok(notifications.some(([, subtitle]) => subtitle === 'Response: skipped'));
+});
+
+test('missing or failing diagnostic APIs never prevent completing the original rewrite', () => {
+  for (const file of configScripts) {
+    const expected = execute(file, diagnosticInput);
+    for (const apis of [
+      {},
+      { notification: {} },
+      { notification: { post() { throw Error('notification failure'); } } },
+      { notification: { post() {} }, persistentStore: { read() { throw Error('storage failure'); } } },
+      { notification: { post() {} }, persistentStore: { write() { throw Error('storage failure'); } } },
+    ]) assert.deepEqual(execute(file, { ...diagnosticInput, argument: 'enabled=true&diagnostics=true', ...apis }), expected);
+  }
+});
+
+test('invalid or absent full response still passes through exactly once with diagnostic notification', () => {
+  for (const body of ['invalid', 'null', '{"state":"NO_CHANGE"}', '{"error":{"message":"secret"}}', '{"state":"UPDATE","entries":[]}']) {
+    const notifications = [];
+    assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body, argument: 'enabled=true&diagnostics=true', notification: { post: (...args) => notifications.push(args) } }), {});
+    assert.equal(notifications.length, 1);
+    assert.equal(notifications[0][1], 'Response: skipped');
+  }
 });
 
 test('header script preserves unrelated headers and clears normal ETag casing', () => {
