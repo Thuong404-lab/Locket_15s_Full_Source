@@ -4,6 +4,28 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
+## Bản mới nhất: v13 — Ép cứng video 15s, đủ caption & Khôi phục tính năng AI / Bộ lọc diện mạo
+
+Bản **v13** khắc phục triệt để lỗi thỉnh thoảng bị quay lại video 3s, đảm bảo video luôn luôn 15s, caption đầy đủ và khôi phục tính năng AI Tạo diện mạo cùng các bộ lọc khuôn mặt:
+
+1. **Khắc phục lỗi bị quay lại video 3s & mất caption (Ép cứng 15s và full caption)**:
+   - **Xử lý `NO_CHANGE` của Firebase**: Trước đây khi Firebase Remote Config trả về `NO_CHANGE` (khi template trên máy chủ không đổi), script cũ bỏ qua không sửa phản hồi, khiến ứng dụng khi làm mới bộ nhớ đệm bị rơi về giá trị mặc định của bản miễn phí (3s video, mất các caption tùy chỉnh). Ở v13, script ép chuyển đổi mọi phản hồi (`NO_CHANGE`, `EMPTY_CONFIG`, v.v.) thành `state: "UPDATE"` kèm toàn bộ 261 caption và cấu hình camera 15s.
+   - **Bổ sung toàn diện các alias thời lượng**: Trong đối tượng `camera` và cấu hình gốc, bổ sung tất cả các khóa: `max_duration`, `maxDuration`, `gold_max_duration`, `goldMaxDuration`, `free_max_duration`, `default_max_duration`, `standard_max_duration`, `video_max_duration`, `camera_max_duration`, `video_duration` đều là `15.0`.
+   - **Xử lý triệt để RevenueCat ETag & Query string**: `del_header.js` xóa thêm `If-None-Match` và `If-Modified-Since` để RevenueCat không trả về mã 304 (empty body); đồng thời pattern URL của `revenuecat` được nới lỏng để bắt cả khi có query parameters (`?app_user_id=...`). Xử lý User-Agent không phân biệt hoa thường để luôn cấp entitlement `Gold`.
+
+2. **Khôi phục tính năng AI và Bộ lọc camera ("Tạo diện mạo")**:
+   - Khôi phục `camera_filter_config` với `allows_custom_filters: true` (tính năng AI Tạo diện mạo phân tích biến ảnh) và `show_filter_button: true` (hiển thị nút bộ lọc trên camera).
+   - Khôi phục các nhóm bộ lọc AI & hiệu ứng khuôn mặt:
+     - **Looks**: `beard` (nhân vật có râu), `bowling_ball` (đầu hói / già đi), `blonde_bleached`, `bob_cut`, `buns`, `tatted`, `mohawk`, `braces`, `bye_brows`.
+     - **Goofy**: `looks_maxxing` (biến ảnh đẹp hơn), `okay_wig`, `influencer`, `toothless`, `bye_brows`.
+     - **Celebrate**, **Cute**, **Costumes**, **Holidays** (đầy đủ 34 filter ids).
+   - Bật các cờ: `camera_filter: "true"`, `camera_filters_enabled: "true"`, `camera_filter_enabled: "true"`, `camera_filter_sheet_enabled: "true"`.
+   - Bật AI phân loại và gợi ý tương tác: `capture_classification_config`.
+
+Link cập nhật module: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=13
+
+Kiểm thử: **71/71 test đạt 100%**.
+
 ## Sửa request và chẩn đoán bằng thông báo — v12-diag2
 
 Đã bổ sung chế độ thông báo tùy chọn cho **hai script Remote Config** để kiểm tra khi không tìm thấy màn hình console trong Shadowrocket. Đây là công cụ chẩn đoán, chưa phải bản sửa lỗi camera 3 giây/caption và chưa được kiểm thử trên iPhone. Module/profile hiện tại vẫn giữ `enabled=true`, thông báo mặc định tắt.

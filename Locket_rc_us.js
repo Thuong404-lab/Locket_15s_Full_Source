@@ -5,7 +5,7 @@
         var control = typeof $argument === "string" ? /^enabled=(true|false)(?:&diagnostics=(true|false))?$/i.exec($argument.trim()) : null;
         if (!control || control[1].toLowerCase() === "false") {
             if (typeof console !== "undefined" && typeof console.log === "function") {
-                console.log("[Locket v12] bypass: " + (control ? "enabled=false" : "invalid module argument"));
+                console.log("[Locket v13] bypass: " + (control ? "enabled=false" : "invalid module argument"));
             }
             $done({});
             return;
@@ -43,7 +43,8 @@ function rewriteConfigRequest() {
     var headers = Object.assign({}, $request.headers || {});
     var removedETag = false;
     Object.keys(headers).forEach(function (key) {
-        if (key.toLowerCase() === "if-none-match") {
+        var lower = key.toLowerCase();
+        if (lower === "if-none-match" || lower === "if-modified-since") {
             delete headers[key];
             removedETag = true;
         }
@@ -61,14 +62,14 @@ function rewriteConfigRequest() {
         body.time_zone = "America/New_York";
         // This cannot bypass the SDK's local minimum fetch interval.
         if (typeof console !== "undefined" && typeof console.log === "function") {
-            console.log("[Locket RC v12] request rewritten: full config requested");
+            console.log("[Locket RC v13] request rewritten: full config requested");
         }
         notifyDiagnostic("rewritten", "Đã bắt được lượt tải Remote Config và yêu cầu cấu hình đầy đủ. Chưa xác nhận phản hồi hoặc giao diện Locket.");
         return { body: JSON.stringify(body), headers: headers };
     }
     if (removedETag) {
         if (typeof console !== "undefined" && typeof console.log === "function") {
-            console.log("[Locket RC v12] request headers rewritten: conditional ETag removed; original body preserved");
+            console.log("[Locket RC v13] request headers rewritten: conditional ETag removed; original body preserved");
         }
         notifyDiagnostic("headers-refreshed", "Đã bỏ If-None-Match để yêu cầu cấu hình đầy đủ; giữ nguyên body chưa đọc được và các header khác. Chưa xác nhận phản hồi.");
         return { headers: headers };

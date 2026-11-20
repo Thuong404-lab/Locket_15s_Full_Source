@@ -5,7 +5,7 @@
         var control = typeof $argument === "string" ? /^enabled=(true|false)(?:&diagnostics=(true|false))?$/i.exec($argument.trim()) : null;
         if (!control || control[1].toLowerCase() === "false") {
             if (typeof console !== "undefined" && typeof console.log === "function") {
-                console.log("[Locket v12] bypass: " + (control ? "enabled=false" : "invalid module argument"));
+                console.log("[Locket v13] bypass: " + (control ? "enabled=false" : "invalid module argument"));
             }
             $done({});
             return;
@@ -29,7 +29,7 @@
     function rewriteLocketConfig() {
         function logStatus(message) {
             if (typeof console !== "undefined" && typeof console.log === "function") {
-                console.log("[Locket RC v12] " + message);
+                console.log("[Locket RC v13] " + message);
             }
             // Notifications are opt-in and only describe this project's fetch.
             // Never include request URLs, headers, upstream values or captions.
@@ -67,7 +67,7 @@
                 var match = /^(?:HTTP\/\d(?:\.\d)?\s+)?([1-5]\d\d)(?:\s|$)/.exec(rawStatus);
                 if (match) status = match[1];
             }
-            return "state=" + state + "; entries=" + entries + "; http=" + status + "; diagnostic=v12-diag2";
+            return "state=" + state + "; entries=" + entries + "; http=" + status + "; diagnostic=v13-diag";
         }
 
         // Scope by project and fetch endpoint, not by the app/SDK User-Agent.
@@ -88,11 +88,14 @@
             logStatus("skipped: invalid response or upstream error");
             return {};
         }
-        // NO_CHANGE has no complete config. Turning it into UPDATE could discard
-        // unrelated settings from the app's cache. Leave it intact and report it.
+        // Force full UPDATE with entries required: even when upstream returns
+        // NO_CHANGE, EMPTY_CONFIG or missing entries, rewrite into UPDATE so that
+        // 15s camera, full captions and AI filters never revert to 3s default behavior.
         if (obj.state !== "UPDATE" || !obj.entries || typeof obj.entries !== "object" || Array.isArray(obj.entries)) {
-            logStatus("skipped: full UPDATE with entries required; " + describeResponseShape(obj));
-            return {};
+            obj.state = "UPDATE";
+            if (!obj.entries || typeof obj.entries !== "object" || Array.isArray(obj.entries)) {
+                obj.entries = {};
+            }
         }
         var activeGroups = Object.keys(LOCKET_OPTIONS).filter(function (group) {
             return LOCKET_OPTIONS[group] === true;
@@ -104,7 +107,7 @@
 
         function groupForKey(key) {
             if (/^(video_sound_enabled|microphone_enabled|camera_microphone_enabled)$/.test(key)) return "audio";
-            if (/^(camera(?:_|$)|live_photos$|zoom_enabled$|upload_|capture_classification_config$)/.test(key)) return "camera";
+            if (/^(camera(?:_|$)|video(?:_|$)|longer_video(?:_|$)|max_video_duration$|gold_video_max_duration$|live_photos$|zoom_enabled$|upload_|capture_classification_config$|filters?_|custom_filters)/.test(key)) return "camera";
             if (/caption|^overlay/.test(key)) return "captions";
             if (/^widget_|^android_widget_/.test(key)) return "widget";
             if (/^cdn_|^storage_bucket|cache|^use_doc_dir_for_image_cache$|^timestamp_based_history_fetches$|^get_latest_moment|^fetch_|^refresh_interval$|^firestore_refresh|^keychain_access_retries$/.test(key)) return "network";
@@ -116,6 +119,7 @@
         // These two JSON objects contain features belonging to several groups.
         var featureGroups = {
             camera_roll: "camera", camera_theme: "camera", longer_video: "camera", video: "camera",
+            camera_filters: "camera", camera_filter: "camera", filters: "camera", custom_filters: "camera", camera_appearance: "camera",
             long_captions: "captions", custom_widget_frames: "widget",
             app_icon_picker: "appearance", profile_badge: "appearance",
             locket_views: "social", unlimited_friends: "social", streak_recovery: "social"
@@ -170,7 +174,12 @@
                 remove_ads: "enabled",
                 video: "enabled",
                 custom_widget_frames: "enabled",
-                streak_recovery: "enabled"
+                streak_recovery: "enabled",
+                camera_filters: "enabled",
+                camera_filter: "enabled",
+                filters: "enabled",
+                custom_filters: "enabled",
+                camera_appearance: "enabled"
             }),
             upsell_features: JSON.stringify({
                 app_icon_picker: true,
@@ -217,6 +226,19 @@
                 goldMaxDuration: 15.0,
                 max_duration: 15.0,
                 maxDuration: 15.0,
+                free_max_duration: 15.0,
+                freeMaxDuration: 15.0,
+                default_max_duration: 15.0,
+                defaultMaxDuration: 15.0,
+                standard_max_duration: 15.0,
+                standardMaxDuration: 15.0,
+                video_max_duration: 15.0,
+                videoMaxDuration: 15.0,
+                camera_max_duration: 15.0,
+                cameraMaxDuration: 15.0,
+                video_duration: 15.0,
+                videoDuration: 15.0,
+                min_video_duration: 0.5,
                 ultra_wide: true,
                 ultraWide: true,
                 volume_button: true,
@@ -250,13 +272,48 @@
                 widget_looping_mode: "never"
             }),
             camera_filter_config: JSON.stringify({
-                allows_custom_filters: false,
-                show_filter_button: false,
-                sheet_enabled: false,
+                allows_custom_filters: true,
+                show_filter_button: true,
+                sheet_enabled: true,
                 open_sheet_immediately: false,
-                sheet_filters: [],
-                picker_filters: []
+                sheet_filters: [
+                    {
+                        title: { en: "Goofy" },
+                        filter_ids: ["okay_wig", "influencer", "looks_maxxing", "toothless", "bye_brows"]
+                    },
+                    {
+                        title: { en: "Looks" },
+                        filter_ids: ["bowling_ball", "blonde_bleached", "beard", "bob_cut", "buns", "tatted", "mohawk", "braces", "bye_brows"]
+                    },
+                    {
+                        title: { en: "Celebrate" },
+                        filter_ids: ["slimed", "princess", "disco_lights", "cash_money", "happy_birthday"]
+                    },
+                    {
+                        title: { en: "Cute" },
+                        filter_ids: ["cutesy", "sticker_face", "flower_crown", "love_bug"]
+                    },
+                    {
+                        title: { en: "Costumes" },
+                        filter_ids: ["wedding", "cowboy_cowgirl", "giraffe", "clown"]
+                    },
+                    {
+                        title: { en: "Holidays" },
+                        filter_ids: ["easter_bunney_cutout", "easter_chick_cutout", "bearded", "leprechaun", "lucky_face", "sweet_hearts", "elf_cutout", "santa_cutout", "frosty"]
+                    }
+                ],
+                picker_filters: [
+                    "okay_wig", "influencer", "looks_maxxing", "toothless", "bye_brows",
+                    "bowling_ball", "blonde_bleached", "beard", "bob_cut", "buns", "tatted",
+                    "mohawk", "braces", "slimed", "princess", "disco_lights", "cash_money",
+                    "happy_birthday", "cutesy", "sticker_face", "flower_crown", "love_bug",
+                    "wedding", "cowboy_cowgirl", "giraffe", "clown", "easter_bunney_cutout",
+                    "easter_chick_cutout", "bearded", "leprechaun", "lucky_face", "sweet_hearts",
+                    "elf_cutout", "santa_cutout", "frosty"
+                ]
             }),
+            camera_filter_storage_bucket: "gs://locket-filters",
+            camera_filter_fetch_cache_max_age_seconds: "0",
             camera_roll_preview_enabled: "true",
             camera_roll_video_enabled: "false",
             camera_roll_video_upload_enabled: "false",
@@ -268,6 +325,25 @@
             // Audio experiment: preserve the upstream audio-session setting.
             // The effect of this flag on received video audio is unverified.
             zoom_enabled: "true",
+            camera_filter: "true",
+            camera_filters_enabled: "true",
+            camera_filter_enabled: "true",
+            camera_filter_sheet_enabled: "true",
+            camera_filter_picker_enabled: "true",
+            custom_filters_enabled: "true",
+            filters_enabled: "true",
+            camera_filter_picker_enabled: "true",
+            custom_filters_enabled: "true",
+            filters_enabled: "true",
+            video_max_duration: "15.0",
+            video_duration: "15.0",
+            camera_max_duration: "15.0",
+            camera_video_max_duration: "15.0",
+            max_video_duration: "15.0",
+            longer_video_enabled: "true",
+            video_enabled: "true",
+            longer_video: "true",
+            gold_video_max_duration: "15.0",
             upload_main: "false",
             upload_main_image_quality: "0.6",
             upload_main_image_size: "1440",
@@ -332,10 +408,13 @@
             hide_chat_button: "false",
             groups_enabled: "true",
             groups_feature_mode: "enabled",
-            camera_filter: "false",
-            camera_filters_enabled: "false",
-            camera_filter_enabled: "false",
-            camera_filter_sheet_enabled: "false",
+            camera_filter: "true",
+            camera_filters_enabled: "true",
+            camera_filter_enabled: "true",
+            camera_filter_sheet_enabled: "true",
+            camera_filter_picker_enabled: "true",
+            custom_filters_enabled: "true",
+            filters_enabled: "true",
             group_contact_invites_enabled: "true",
             groups_onboarding_accept_invite_preview_enabled: "true",
             chat_hyperlink_enabled_mode: "always_enabled",
@@ -827,7 +906,7 @@
             share_history_config: JSON.stringify({ prompt_enabled: true, fetching_enabled: true })
         });
         var details = ["groups=" + activeGroups.join(",")];
-        if (LOCKET_OPTIONS.camera === true) details.push("camera=15s, gallery-video=false");
+        if (LOCKET_OPTIONS.camera === true) details.push("camera=15s, filters=ai+looks, gallery-video=false");
         if (LOCKET_OPTIONS.audio === true) details.push("sound=true");
         if (LOCKET_OPTIONS.captions === true) {
             var captionSections = JSON.parse(obj.entries.overlay_items);
@@ -853,7 +932,7 @@
         Object.keys(responseHeaders).forEach(function (key) {
             if (key.toLowerCase() === "etag") delete responseHeaders[key];
         });
-        responseHeaders.etag = '"locket-v12-' + hash.toString(16) + '"';
+        responseHeaders.etag = '"locket-v13-' + hash.toString(16) + '"';
         details.push("config-tag=" + hash.toString(16));
         logStatus("response rewritten: " + details.join("; ") + "; device behavior unverified");
         return { body: rewrittenBody, headers: responseHeaders };

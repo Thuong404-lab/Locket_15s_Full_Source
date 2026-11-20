@@ -2,3 +2,8 @@
 proxy-*.db
 proxy-*.db-wal
 proxy-*.db-shm
+
+# Local certificate exports and device config containing a private key.
+*.p12
+/Locket_15s.conf
+*copy*.conf

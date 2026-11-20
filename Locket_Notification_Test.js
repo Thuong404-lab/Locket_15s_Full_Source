@@ -32,6 +32,6 @@
     } catch (e) {
         log("test API failed; no network or Locket data was accessed");
     } finally {
-        $done({});
+        if (typeof $done === "function") $done({});
     }
 })();

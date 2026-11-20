@@ -4,7 +4,7 @@
         var control = typeof $argument === "string" ? /^enabled=(true|false)$/i.exec($argument.trim()) : null;
         if (!control || control[1].toLowerCase() === "false") {
             if (typeof console !== "undefined" && typeof console.log === "function") {
-                console.log("[Locket v12] bypass: " + (control ? "enabled=false" : "invalid module argument"));
+                console.log("[Locket v13] bypass: " + (control ? "enabled=false" : "invalid module argument"));
             }
             $done({});
             return;
@@ -56,7 +56,7 @@ function rewriteRevenueCatResponse() {
     product_identifier: 'com.locket02.premium.yearly',
     expires_date: '9999-12-18T01:04:17Z',
   };
-  const match = Object.keys(mapping).find(key => ua.includes(key));
+  const match = Object.keys(mapping).find(key => ua.toLowerCase().includes(key.toLowerCase()));
   if (match) {
     const [entitlement, product] = mapping[match];
     if (product) {
@@ -64,10 +64,17 @@ function rewriteRevenueCatResponse() {
       obj.subscriber.subscriptions[product] = locket02;
     } else {
       obj.subscriber.subscriptions['com.locket02.premium.yearly'] = locket02;
+      obj.subscriber.subscriptions['com.locket.gold.yearly'] = locket02;
     }
     obj.subscriber.entitlements[entitlement] = locket01;
+    if (entitlement === 'Gold') {
+      obj.subscriber.entitlements.gold = locket01;
+      obj.subscriber.entitlements.pro = locket01;
+    }
   } else {
     obj.subscriber.subscriptions['com.locket02.premium.yearly'] = locket02;
+    obj.subscriber.subscriptions['com.locket.gold.yearly'] = locket02;
+    obj.subscriber.entitlements.Gold = locket01;
     obj.subscriber.entitlements.pro = locket01;
   }
   return { body: JSON.stringify(obj) };

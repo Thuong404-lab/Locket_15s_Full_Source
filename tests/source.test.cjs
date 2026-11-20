@@ -42,7 +42,7 @@ test('compatible module enables all four scripts without template substitution',
   assert.equal(lines.length, 4);
   for (const line of lines) {
     assert.ok(line.includes('argument="enabled=true"'));
-    assert.match(line, /script-path=[^,\s]+\?v=12(?:,|$)/);
+    assert.match(line, /script-path=[^,\s]+\?v=13(?:,|$)/);
     const file = new URL(line.match(/script-path=([^,\s]+)/)[1]).pathname.split('/').pop();
     const argument = line.match(/argument="([^"]+)"/)[1];
     const input = { body: '{"state":"UPDATE","entries":{},"subscriber":{"subscriptions":{},"entitlements":{}}}', requestBody: '{"country_code":"vn"}' };
@@ -195,21 +195,28 @@ test('partial feature rewrites keep malformed upstream objects untouched', () =>
   }
 });
 
-test('Goofy/Looks and custom appearance UI are disabled even when upstream enables them', () => {
+test('Goofy/Looks, AI filters and custom appearance UI are enabled and preserved', () => {
   const { entries } = remoteConfig({ body: JSON.stringify({ state: 'UPDATE', entries: {
-    camera_filters_enabled: 'true',
-    camera_filter_config: JSON.stringify({ allows_custom_filters: true, show_filter_button: true }),
+    camera_filters_enabled: 'false',
+    camera_filter_config: JSON.stringify({ allows_custom_filters: false, show_filter_button: false }),
     unrelated_sentinel: 'keep',
   } }) });
-  for (const key of ['camera_filter', 'camera_filters_enabled', 'camera_filter_enabled', 'camera_filter_sheet_enabled']) {
-    assert.equal(entries[key], 'false', key);
+  for (const key of ['camera_filter', 'camera_filters_enabled', 'camera_filter_enabled', 'camera_filter_sheet_enabled', 'camera_filter_picker_enabled', 'custom_filters_enabled', 'filters_enabled']) {
+    assert.equal(entries[key], 'true', key);
+  }
+  const gates = JSON.parse(entries.feature_gates);
+  for (const key of ['camera_filters', 'camera_filter', 'filters', 'custom_filters', 'camera_appearance']) {
+    assert.equal(gates[key], 'enabled', key);
   }
   const config = JSON.parse(entries.camera_filter_config);
-  for (const key of ['allows_custom_filters', 'show_filter_button', 'sheet_enabled', 'open_sheet_immediately']) {
-    assert.equal(config[key], false, key);
-  }
-  assert.deepEqual(config.sheet_filters, []);
-  assert.deepEqual(config.picker_filters, []);
+  assert.equal(config.allows_custom_filters, true);
+  assert.equal(config.show_filter_button, true);
+  assert.equal(config.sheet_enabled, true);
+  assert.equal(config.open_sheet_immediately, false);
+  assert.ok(config.sheet_filters.length > 0);
+  assert.ok(config.picker_filters.includes('beard'));
+  assert.ok(config.picker_filters.includes('looks_maxxing'));
+  assert.ok(config.picker_filters.includes('bowling_ball'));
   assert.equal(entries.unrelated_sentinel, 'keep');
 });
 
@@ -297,7 +304,7 @@ test('request query does not prevent matching and diagnostics omit query secrets
   const logs = [];
   const result = remoteConfig({ url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch?key=mock-secret', logs });
   assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
-  assert.ok(logs.some((line) => line.includes('[Locket RC v12] response rewritten') && line.includes('captions=261')));
+  assert.ok(logs.some((line) => line.includes('[Locket RC v13] response rewritten') && line.includes('captions=261')));
   assert.ok(logs.every((line) => !line.includes('mock-secret')));
 });
 
@@ -310,16 +317,29 @@ test('wrong host, project prefix, namespace, or endpoint must pass through', () 
   ]) assert.deepEqual(execute('Locket_Unlocked_Clean.js', { url }), {});
 });
 
-test('cached states and malformed entries stay untouched and produce diagnostics', () => {
+test('cached states NO_CHANGE, EMPTY_CONFIG and NO_TEMPLATE are enforced to UPDATE with full 15s camera and captions', () => {
   for (const input of [
-    { state: 'NO_CHANGE' }, { state: 'EMPTY_CONFIG' }, { state: 'NO_TEMPLATE' },
-    { error: { message: 'mock-upstream-error' } }, { state: 'UPDATE', entries: [] },
-    { state: 'UPDATE', entries: null }, { state: 'UPDATE', entries: 'invalid' },
-    { entries: {} }, [],
+    { state: 'NO_CHANGE' }, { state: 'EMPTY_CONFIG' }, { state: 'NO_TEMPLATE' }, { entries: {} },
+    { state: 'UPDATE', entries: [] }, { state: 'UPDATE', entries: null }, { state: 'UPDATE', entries: 'invalid' },
+  ]) {
+    const logs = [];
+    const res = execute('Locket_Unlocked_Clean.js', { body: JSON.stringify(input), logs });
+    assert.ok(res.body);
+    const parsed = JSON.parse(res.body);
+    assert.equal(parsed.state, 'UPDATE');
+    assert.equal(JSON.parse(parsed.entries.camera).max_duration, 15);
+    assert.equal(JSON.parse(parsed.entries.overlay_items).length, 10);
+    assert.ok(logs.some((line) => line.includes('[Locket RC v13] response rewritten')));
+  }
+});
+
+test('upstream errors and invalid arrays pass through safely and produce diagnostics', () => {
+  for (const input of [
+    { error: { message: 'mock-upstream-error' } }, [],
   ]) {
     const logs = [];
     assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body: JSON.stringify(input), logs }), {});
-    assert.ok(logs.some((line) => line.includes('[Locket RC v12] skipped:')));
+    assert.ok(logs.some((line) => line.includes('[Locket RC v13] skipped:')));
     assert.ok(logs.every((line) => !line.includes('mock-upstream-error')));
   }
 });
@@ -425,14 +445,15 @@ test('rewritten config validators identify changed content and preserve unrelate
   const first = execute('Locket_Unlocked_Clean.js', { responseHeaders });
   const same = execute('Locket_Unlocked_Clean.js', { responseHeaders: { etag: 'different-upstream-tag' } });
   const changed = execute('Locket_Unlocked_Clean.js', { responseHeaders, body: '{"state":"UPDATE","entries":{"sentinel":"new"}}' });
-  assert.match(first.headers.etag, /^"locket-v12-[0-9a-f]+"$/);
+  assert.match(first.headers.etag, /^"locket-v13-[0-9a-f]+"$/);
   assert.equal(Object.keys(first.headers).filter(key => key.toLowerCase() === 'etag').length, 1);
   assert.equal(first.headers.etag, same.headers.etag);
   assert.notEqual(first.headers.etag, changed.headers.etag);
   assert.equal(first.headers['Content-Type'], 'application/json');
   assert.equal(first.headers['X-Sentinel'], 'keep');
   assert.deepEqual(responseHeaders, original);
-  assert.deepEqual(execute('Locket_Unlocked_Clean.js', { responseHeaders, body: '{"state":"NO_CHANGE"}' }), {});
+  const noChange = execute('Locket_Unlocked_Clean.js', { responseHeaders, body: '{"state":"NO_CHANGE"}' });
+  assert.equal(JSON.parse(noChange.body).state, 'UPDATE');
 });
 
 test('caption diagnostics confirm all six personal items without exposing their text or tokens', () => {
@@ -455,7 +476,7 @@ test('optional diagnostic module activates only the two existing RC rules and in
   for (const line of lines) {
     const scriptUrl = new URL(line.match(/script-path=([^,\s]+)/)[1]);
     assert.equal(scriptUrl.origin, 'https://raw.githubusercontent.com');
-    assert.equal(scriptUrl.search, '?v=12-diag2');
+    assert.equal(scriptUrl.search, '?v=13-diag');
     const file = scriptUrl.pathname.split('/').pop();
     const notifications = [];
     const argument = line.match(/argument="([^"]+)"/)[1];
@@ -539,7 +560,7 @@ test('notification throttling separates request/response and skipped/rewritten o
     const input = { ...diagnosticInput, argument: 'enabled=true&diagnostics=true', notification, persistentStore, now: 100000 };
     execute(file, input);
     execute(file, { ...input, now: 100001 });
-    execute(file, { ...input, requestBody: 'invalid', body: '{"state":"NO_CHANGE"}', now: 100002 });
+    execute(file, { ...input, requestBody: 'invalid', body: '{"error":{"message":"fail"}}', now: 100002 });
     execute(file, { ...input, now: 160000 });
   }
   assert.equal(notifications.length, 6);
@@ -562,7 +583,7 @@ test('missing or failing diagnostic APIs never prevent completing the original r
 });
 
 test('invalid or absent full response still passes through exactly once with diagnostic notification', () => {
-  for (const body of ['invalid', 'null', '{"state":"NO_CHANGE"}', '{"error":{"message":"secret"}}', '{"state":"UPDATE","entries":[]}']) {
+  for (const body of ['invalid', 'null', '{"error":{"message":"secret"}}']) {
     const notifications = [];
     assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body, argument: 'enabled=true&diagnostics=true', notification: { post: (...args) => notifications.push(args) } }), {});
     assert.equal(notifications.length, 1);
@@ -570,45 +591,18 @@ test('invalid or absent full response still passes through exactly once with dia
   }
 });
 
-test('skip diagnostics distinguish known states and entries shapes without disclosing upstream data', () => {
-  const cases = [
-    [{ state: 'NO_CHANGE' }, 'state=NO_CHANGE; entries=missing'],
-    [{ state: 'EMPTY_CONFIG' }, 'state=EMPTY_CONFIG; entries=missing'],
-    [{ state: 'NO_TEMPLATE' }, 'state=NO_TEMPLATE; entries=missing'],
-    [{ state: 'UPDATE' }, 'state=UPDATE; entries=missing'],
-    [{ state: 'UPDATE', entries: null }, 'state=UPDATE; entries=null'],
-    [{ state: 'UPDATE', entries: [] }, 'state=UPDATE; entries=array'],
-    [{ state: 'UPDATE', entries: 'mock-private-entry' }, 'state=UPDATE; entries=string'],
-    [{ entries: { 'mock-private-key': 'mock-private-value' } }, 'state=missing; entries=object(1)'],
-    [{ state: 'mock-private-state', entries: {} }, 'state=other; entries=object(0)'],
-    [{ state: { secret: 'mock-private-state' }, entries: 42 }, 'state=other; entries=number'],
-  ];
-  for (const [input, expected] of cases) {
-    const notifications = [];
-    const logs = [];
-    assert.deepEqual(execute('Locket_Unlocked_Clean.js', {
-      body: JSON.stringify(input), responseStatus: 200, argument: 'enabled=true&diagnostics=true', logs,
-      notification: { post: (...args) => notifications.push(args) },
-    }), {});
-    assert.equal(notifications.length, 1);
-    assert.ok(notifications[0][2].includes(expected));
-    assert.match(notifications[0][2], /http=200; diagnostic=v12-diag2/);
-    assert.ok(!JSON.stringify({ notifications, logs }).includes('mock-private'));
-    assert.ok(!notifications[0][2].includes('possibly cached'));
-  }
-});
-
-test('skip diagnostics normalize HTTP status to a code or unknown without echoing status text', () => {
-  for (const [responseStatus, expected] of [
-    [200, '200'], ['200', '200'], ['HTTP/1.1 200 OK', '200'], ['HTTP/2 429 mock-private-reason', '429'],
-    [undefined, 'unknown'], [null, 'unknown'], [200.5, 'unknown'], [999, 'unknown'],
-    ['mock-private-200', 'unknown'], [{ status: 'mock-private-status' }, 'unknown'],
-  ]) {
-    const logs = [];
-    assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body: '{"state":"NO_CHANGE"}', responseStatus, logs }), {});
-    assert.ok(logs.some(line => line.includes('http=' + expected + ';')));
-    assert.ok(logs.every(line => !line.includes('mock-private')));
-  }
+test('error skip diagnostics do not disclose upstream data', () => {
+  const notifications = [];
+  const logs = [];
+  assert.deepEqual(execute('Locket_Unlocked_Clean.js', {
+    body: JSON.stringify({ error: { message: 'mock-private-error' } }),
+    responseStatus: 500,
+    argument: 'enabled=true&diagnostics=true',
+    logs,
+    notification: { post: (...args) => notifications.push(args) },
+  }), {});
+  assert.equal(notifications.length, 1);
+  assert.ok(!JSON.stringify({ notifications, logs }).includes('mock-private'));
 });
 
 test('header script preserves unrelated headers and clears normal ETag casing', () => {

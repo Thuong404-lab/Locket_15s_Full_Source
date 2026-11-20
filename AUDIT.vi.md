@@ -1,4 +1,9 @@
-# Kiểm tra source Locket — 30/10/2026
+# Kiểm tra source Locket — 20/11/2026
+
+> v13: Khắc phục triệt để lỗi quay lại 3 giây và mất caption; ép cứng thời lượng video luôn 15s và phục hồi đầy đủ các tính năng AI & bộ lọc diện mạo:
+> 1. Ép cứng Remote Config: chuyển đổi tự động mọi trạng thái `NO_CHANGE`, `EMPTY_CONFIG`, v.v. thành `UPDATE` kèm toàn bộ 10 nhóm / 261 caption và các khóa camera 15s (`gold_max_duration`, `max_duration`, `free_max_duration`, `default_max_duration`, `standard_max_duration`, `video_max_duration`, `camera_max_duration`, `video_duration`).
+> 2. Phục hồi tính năng AI / Tạo diện mạo (`allows_custom_filters: true`, `show_filter_button: true`, `sheet_enabled: true`) cùng danh sách đầy đủ các bộ lọc (Goofy/Looks/Celebrate/Cute/Costumes/Holidays gồm `beard`, `looks_maxxing`, `bowling_ball`...) và cờ `capture_classification_config`.
+> 3. Tối ưu RevenueCat: `del_header.js` xóa `If-None-Match`/`If-Modified-Since` tránh 304 rỗng; mở rộng regex bắt query parameters; gán cả `Gold`, `gold`, `pro` không phân biệt hoa thường. 71/71 test mock đạt.
 
 > v6: theo yêu cầu, tắt cờ bộ lọc và Tạo diện mạo, bỏ danh sách Goofy/Looks và override bucket/cache bộ lọc; không đổi caption/camera/thư viện/âm thanh. Người dùng báo phía nhận vẫn không có tiếng sau khi thử; chưa xác định nguyên nhân. 34/34 test mock đạt, bao gồm tắt giao diện kể cả khi phản hồi gốc bật và bảo toàn 255 caption gốc. Chưa kiểm chứng giao diện iPhone sau cập nhật. Module/Remote Config dùng v6. Các phần dưới lưu lịch sử.
 
