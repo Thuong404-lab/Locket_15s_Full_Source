@@ -96,7 +96,7 @@
         }
         // Force full UPDATE with entries required: even when upstream returns
         // NO_CHANGE, EMPTY_CONFIG or missing entries, rewrite into UPDATE so that
-        // 15s camera, full captions and AI filters never revert to 3s default behavior.
+        // 15s camera and full captions never revert to 3s default behavior.
         if (obj.state !== "UPDATE" || !obj.entries || typeof obj.entries !== "object" || Array.isArray(obj.entries)) {
             obj.state = "UPDATE";
             if (!obj.entries || typeof obj.entries !== "object" || Array.isArray(obj.entries)) {
@@ -180,12 +180,7 @@
                 remove_ads: "enabled",
                 video: "enabled",
                 custom_widget_frames: "enabled",
-                streak_recovery: "enabled",
-                camera_filters: "enabled",
-                camera_filter: "enabled",
-                filters: "enabled",
-                custom_filters: "enabled",
-                camera_appearance: "enabled"
+                streak_recovery: "enabled"
             }),
             upsell_features: JSON.stringify({
                 app_icon_picker: true,
@@ -278,48 +273,13 @@
                 widget_looping_mode: "never"
             }),
             camera_filter_config: JSON.stringify({
-                allows_custom_filters: true,
-                show_filter_button: true,
-                sheet_enabled: true,
+                allows_custom_filters: false,
+                show_filter_button: false,
+                sheet_enabled: false,
                 open_sheet_immediately: false,
-                sheet_filters: [
-                    {
-                        title: { en: "Goofy" },
-                        filter_ids: ["okay_wig", "influencer", "looks_maxxing", "toothless", "bye_brows"]
-                    },
-                    {
-                        title: { en: "Looks" },
-                        filter_ids: ["bowling_ball", "blonde_bleached", "beard", "bob_cut", "buns", "tatted", "mohawk", "braces", "bye_brows"]
-                    },
-                    {
-                        title: { en: "Celebrate" },
-                        filter_ids: ["slimed", "princess", "disco_lights", "cash_money", "happy_birthday"]
-                    },
-                    {
-                        title: { en: "Cute" },
-                        filter_ids: ["cutesy", "sticker_face", "flower_crown", "love_bug"]
-                    },
-                    {
-                        title: { en: "Costumes" },
-                        filter_ids: ["wedding", "cowboy_cowgirl", "giraffe", "clown"]
-                    },
-                    {
-                        title: { en: "Holidays" },
-                        filter_ids: ["easter_bunney_cutout", "easter_chick_cutout", "bearded", "leprechaun", "lucky_face", "sweet_hearts", "elf_cutout", "santa_cutout", "frosty"]
-                    }
-                ],
-                picker_filters: [
-                    "okay_wig", "influencer", "looks_maxxing", "toothless", "bye_brows",
-                    "bowling_ball", "blonde_bleached", "beard", "bob_cut", "buns", "tatted",
-                    "mohawk", "braces", "slimed", "princess", "disco_lights", "cash_money",
-                    "happy_birthday", "cutesy", "sticker_face", "flower_crown", "love_bug",
-                    "wedding", "cowboy_cowgirl", "giraffe", "clown", "easter_bunney_cutout",
-                    "easter_chick_cutout", "bearded", "leprechaun", "lucky_face", "sweet_hearts",
-                    "elf_cutout", "santa_cutout", "frosty"
-                ]
+                sheet_filters: [],
+                picker_filters: []
             }),
-            camera_filter_storage_bucket: "gs://locket-filters",
-            camera_filter_fetch_cache_max_age_seconds: "0",
             camera_roll_preview_enabled: "true",
             camera_roll_video_enabled: "false",
             camera_roll_video_upload_enabled: "false",
@@ -331,16 +291,13 @@
             // Audio experiment: preserve the upstream audio-session setting.
             // The effect of this flag on received video audio is unverified.
             zoom_enabled: "true",
-            camera_filter: "true",
-            camera_filters_enabled: "true",
-            camera_filter_enabled: "true",
-            camera_filter_sheet_enabled: "true",
-            camera_filter_picker_enabled: "true",
-            custom_filters_enabled: "true",
-            filters_enabled: "true",
-            camera_filter_picker_enabled: "true",
-            custom_filters_enabled: "true",
-            filters_enabled: "true",
+            camera_filter: "false",
+            camera_filters_enabled: "false",
+            camera_filter_enabled: "false",
+            camera_filter_sheet_enabled: "false",
+            camera_filter_picker_enabled: "false",
+            custom_filters_enabled: "false",
+            filters_enabled: "false",
             video_max_duration: "15.0",
             video_duration: "15.0",
             camera_max_duration: "15.0",
@@ -414,13 +371,13 @@
             hide_chat_button: "false",
             groups_enabled: "true",
             groups_feature_mode: "enabled",
-            camera_filter: "true",
-            camera_filters_enabled: "true",
-            camera_filter_enabled: "true",
-            camera_filter_sheet_enabled: "true",
-            camera_filter_picker_enabled: "true",
-            custom_filters_enabled: "true",
-            filters_enabled: "true",
+            camera_filter: "false",
+            camera_filters_enabled: "false",
+            camera_filter_enabled: "false",
+            camera_filter_sheet_enabled: "false",
+            camera_filter_picker_enabled: "false",
+            custom_filters_enabled: "false",
+            filters_enabled: "false",
             group_contact_invites_enabled: "true",
             groups_onboarding_accept_invite_preview_enabled: "true",
             chat_hyperlink_enabled_mode: "always_enabled",
@@ -921,7 +878,7 @@
             share_history_config: JSON.stringify({ prompt_enabled: true, fetching_enabled: true })
         });
         var details = ["groups=" + activeGroups.join(",")];
-        if (LOCKET_OPTIONS.camera === true) details.push("camera=15s, filters=ai+looks, gallery-video=false");
+        if (LOCKET_OPTIONS.camera === true) details.push("camera=15s, gallery-video=false");
         if (LOCKET_OPTIONS.audio === true) details.push("sound=true");
         if (LOCKET_OPTIONS.captions === true) {
             var captionSections = JSON.parse(obj.entries.overlay_items);

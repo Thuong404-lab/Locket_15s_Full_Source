@@ -42,7 +42,7 @@ test('compatible module enables all four scripts without template substitution',
   assert.equal(lines.length, 4);
   for (const line of lines) {
     assert.ok(line.includes('argument="enabled=true"'));
-    assert.match(line, /script-path=[^,\s]+\?v=18(?:,|$)/);
+    assert.match(line, /script-path=[^,\s]+\?v=19(?:,|$)/);
     const file = new URL(line.match(/script-path=([^,\s]+)/)[1]).pathname.split('/').pop();
     const argument = line.match(/argument="([^"]+)"/)[1];
     const input = { body: '{"state":"UPDATE","entries":{},"subscriber":{"subscriptions":{},"entitlements":{}}}', requestBody: '{"country_code":"vn"}' };
@@ -195,28 +195,26 @@ test('partial feature rewrites keep malformed upstream objects untouched', () =>
   }
 });
 
-test('Goofy/Looks, AI filters and custom appearance UI are enabled and preserved', () => {
+test('Goofy/Looks, AI filters and custom appearance UI are disabled', () => {
   const { entries } = remoteConfig({ body: JSON.stringify({ state: 'UPDATE', entries: {
-    camera_filters_enabled: 'false',
-    camera_filter_config: JSON.stringify({ allows_custom_filters: false, show_filter_button: false }),
+    camera_filters_enabled: 'true',
+    camera_filter_config: JSON.stringify({ allows_custom_filters: true, show_filter_button: true }),
     unrelated_sentinel: 'keep',
   } }) });
   for (const key of ['camera_filter', 'camera_filters_enabled', 'camera_filter_enabled', 'camera_filter_sheet_enabled', 'camera_filter_picker_enabled', 'custom_filters_enabled', 'filters_enabled']) {
-    assert.equal(entries[key], 'true', key);
+    assert.equal(entries[key], 'false', key);
   }
   const gates = JSON.parse(entries.feature_gates);
   for (const key of ['camera_filters', 'camera_filter', 'filters', 'custom_filters', 'camera_appearance']) {
-    assert.equal(gates[key], 'enabled', key);
+    assert.equal(gates[key], undefined, key);
   }
   const config = JSON.parse(entries.camera_filter_config);
-  assert.equal(config.allows_custom_filters, true);
-  assert.equal(config.show_filter_button, true);
-  assert.equal(config.sheet_enabled, true);
+  assert.equal(config.allows_custom_filters, false);
+  assert.equal(config.show_filter_button, false);
+  assert.equal(config.sheet_enabled, false);
   assert.equal(config.open_sheet_immediately, false);
-  assert.ok(config.sheet_filters.length > 0);
-  assert.ok(config.picker_filters.includes('beard'));
-  assert.ok(config.picker_filters.includes('looks_maxxing'));
-  assert.ok(config.picker_filters.includes('bowling_ball'));
+  assert.deepEqual(config.sheet_filters, []);
+  assert.deepEqual(config.picker_filters, []);
   assert.equal(entries.unrelated_sentinel, 'keep');
 });
 

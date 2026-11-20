@@ -4,25 +4,20 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
-## Bản mới nhất: v18 — Hỗ trợ Port :443, Mở rộng Pattern Remote Config, Fix Tương tác Filter & 270 Caption
+## Bản mới nhất: v19 — Ẩn Nút AI Filter theo yêu cầu, Ép Cứng Camera 15s & 270 Caption
 
-Bản **v18** hỗ trợ đầy đủ URL có port :443 từ Shadowrocket, nới lỏng pattern khớp Firebase Remote Config, sửa lỗi kẹt trình điều khiển filter (`open_sheet_immediately: false`) và bảo đảm nạp trọn vẹn 270 caption:
+Bản **v19** ẩn hoàn toàn icon / sheet bộ lọc AI ("Tạo diện mạo") trên giao diện máy ảnh theo yêu cầu, tránh việc icon không hoạt động gây khó chịu, đồng thời tối ưu hóa tính năng quay video 15s và toàn bộ 270 caption:
 
 1. **Khắc phục lỗi bị quay lại video 3s & mất caption (Ép cứng 15s và full caption)**:
    - **Xử lý `NO_CHANGE` của Firebase**: Trước đây khi Firebase Remote Config trả về `NO_CHANGE` (khi template trên máy chủ không đổi), script cũ bỏ qua không sửa phản hồi, khiến ứng dụng khi làm mới bộ nhớ đệm bị rơi về giá trị mặc định của bản miễn phí (3s video, mất các caption tùy chỉnh). Ở v13, script ép chuyển đổi mọi phản hồi (`NO_CHANGE`, `EMPTY_CONFIG`, v.v.) thành `state: "UPDATE"` kèm toàn bộ 261 caption và cấu hình camera 15s.
    - **Bổ sung toàn diện các alias thời lượng**: Trong đối tượng `camera` và cấu hình gốc, bổ sung tất cả các khóa: `max_duration`, `maxDuration`, `gold_max_duration`, `goldMaxDuration`, `free_max_duration`, `default_max_duration`, `standard_max_duration`, `video_max_duration`, `camera_max_duration`, `video_duration` đều là `15.0`.
    - **Xử lý triệt để RevenueCat ETag & Query string**: `del_header.js` xóa thêm `If-None-Match` và `If-Modified-Since` để RevenueCat không trả về mã 304 (empty body); đồng thời pattern URL của `revenuecat` được nới lỏng để bắt cả khi có query parameters (`?app_user_id=...`). Xử lý User-Agent không phân biệt hoa thường để luôn cấp entitlement `Gold`.
 
-2. **Khôi phục tính năng AI và Bộ lọc camera ("Tạo diện mạo")**:
-   - Khôi phục `camera_filter_config` với `allows_custom_filters: true` (tính năng AI Tạo diện mạo phân tích biến ảnh) và `show_filter_button: true` (hiển thị nút bộ lọc trên camera).
-   - Khôi phục các nhóm bộ lọc AI & hiệu ứng khuôn mặt:
-     - **Looks**: `beard` (nhân vật có râu), `bowling_ball` (đầu hói / già đi), `blonde_bleached`, `bob_cut`, `buns`, `tatted`, `mohawk`, `braces`, `bye_brows`.
-     - **Goofy**: `looks_maxxing` (biến ảnh đẹp hơn), `okay_wig`, `influencer`, `toothless`, `bye_brows`.
-     - **Celebrate**, **Cute**, **Costumes**, **Holidays** (đầy đủ 34 filter ids).
-   - Bật các cờ: `camera_filter: "true"`, `camera_filters_enabled: "true"`, `camera_filter_enabled: "true"`, `camera_filter_sheet_enabled: "true"`.
-   - Bật AI phân loại và gợi ý tương tác: `capture_classification_config`.
+2. **Ẩn hoàn toàn nút và bộ lọc AI ("Tạo diện mạo")**:
+   - Do tính năng Tạo diện mạo AI của Locket phụ thuộc vào máy chủ GPU đám mây của Locket (`api.locketcamera.com`) để sinh ảnh AI (cần hóa đơn Apple StoreKit hợp lệ xác thực tại backend), việc bật nút trên máy khách sẽ dẫn đến tình trạng bấm vào không phản hồi.
+   - Bản v19 tắt `show_filter_button: false`, `allows_custom_filters: false`, `sheet_enabled: false` để giao diện camera luôn gọn gàng, mượt mà và không còn hiện icon AI.
 
-Link cập nhật module: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=18
+Link cập nhật module: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=19
 
 Kiểm thử: **71/71 test đạt 100%**.
 
