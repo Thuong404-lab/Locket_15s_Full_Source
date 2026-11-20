@@ -4,9 +4,9 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
-## Bản mới nhất: v13 — Ép cứng video 15s, đủ caption & Khôi phục tính năng AI / Bộ lọc diện mạo
+## Bản mới nhất: v15 — Sửa lỗi Gold về mặc định, Thêm 9 Caption mới & Ép cứng 15s, AI Filters
 
-Bản **v13** khắc phục triệt để lỗi thỉnh thoảng bị quay lại video 3s, đảm bảo video luôn luôn 15s, caption đầy đủ và khôi phục tính năng AI Tạo diện mạo cùng các bộ lọc khuôn mặt:
+Bản **v15** khắc phục triệt để lỗi tài khoản bị trả về miễn phí / mất Gold, bổ sung thêm 9 caption theo yêu cầu vào mục "🎨 Decorative by Locket" (tổng cộng 270 caption) và cập nhật đường dẫn script tránh cache:
 
 1. **Khắc phục lỗi bị quay lại video 3s & mất caption (Ép cứng 15s và full caption)**:
    - **Xử lý `NO_CHANGE` của Firebase**: Trước đây khi Firebase Remote Config trả về `NO_CHANGE` (khi template trên máy chủ không đổi), script cũ bỏ qua không sửa phản hồi, khiến ứng dụng khi làm mới bộ nhớ đệm bị rơi về giá trị mặc định của bản miễn phí (3s video, mất các caption tùy chỉnh). Ở v13, script ép chuyển đổi mọi phản hồi (`NO_CHANGE`, `EMPTY_CONFIG`, v.v.) thành `state: "UPDATE"` kèm toàn bộ 261 caption và cấu hình camera 15s.
@@ -22,7 +22,7 @@ Bản **v13** khắc phục triệt để lỗi thỉnh thoảng bị quay lại
    - Bật các cờ: `camera_filter: "true"`, `camera_filters_enabled: "true"`, `camera_filter_enabled: "true"`, `camera_filter_sheet_enabled: "true"`.
    - Bật AI phân loại và gợi ý tương tác: `capture_classification_config`.
 
-Link cập nhật module: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=13
+Link cập nhật module: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=15
 
 Kiểm thử: **71/71 test đạt 100%**.
 

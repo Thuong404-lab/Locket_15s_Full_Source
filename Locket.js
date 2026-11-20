@@ -44,18 +44,18 @@ function rewriteRevenueCatResponse() {
     ownership_type: 'PURCHASED',
     billing_issues_detected_at: null,
     period_type: 'normal',
-    expires_date: '9999-12-18T01:04:17Z',
+    expires_date: '2099-12-18T01:04:17Z',
     grace_period_expires_date: null,
     unsubscribe_detected_at: null,
-    original_purchase_date: '3636-06-03T01:04:18Z',
-    purchase_date: '3636-06-03T01:04:17Z',
+    original_purchase_date: '2024-01-01T00:00:00Z',
+    purchase_date: '2024-01-01T00:00:00Z',
     store: 'app_store',
   };
   const locket01 = {
     grace_period_expires_date: null,
-    purchase_date: '3636-06-03T01:04:17Z',
+    purchase_date: '2024-01-01T00:00:00Z',
     product_identifier: 'com.locket02.premium.yearly',
-    expires_date: '9999-12-18T01:04:17Z',
+    expires_date: '2099-12-18T01:04:17Z',
   };
   const match = Object.keys(mapping).find(key => ua.toLowerCase().includes(key.toLowerCase()));
   if (match) {

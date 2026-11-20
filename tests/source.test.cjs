@@ -42,7 +42,7 @@ test('compatible module enables all four scripts without template substitution',
   assert.equal(lines.length, 4);
   for (const line of lines) {
     assert.ok(line.includes('argument="enabled=true"'));
-    assert.match(line, /script-path=[^,\s]+\?v=13(?:,|$)/);
+    assert.match(line, /script-path=[^,\s]+\?v=15(?:,|$)/);
     const file = new URL(line.match(/script-path=([^,\s]+)/)[1]).pathname.split('/').pop();
     const argument = line.match(/argument="([^"]+)"/)[1];
     const input = { body: '{"state":"UPDATE","entries":{},"subscriber":{"subscriptions":{},"entitlements":{}}}', requestBody: '{"country_code":"vn"}' };
@@ -167,7 +167,7 @@ test('every combination of switches preserves disabled groups and applies enable
     assert.equal(actual.unrelated_sentinel, 'keep');
     assert.equal(actual.audio_session_deactivation_enabled, 'false');
     if (!options.audio) assert.ok(logs.every(line => !line.includes('sound=true')));
-    if (!options.captions) assert.ok(logs.every(line => !line.includes('captions=261')));
+    if (!options.captions) assert.ok(logs.every(line => !line.includes('captions=')));
   }
 });
 
@@ -263,7 +263,7 @@ test('all six requested captions retain their emoji', () => {
 test('six personal captions lead the love section and all original captions remain intact', () => {
   const sections = JSON.parse(remoteConfig().entries.overlay_items);
   assert.equal(sections.length, 10);
-  assert.equal(sections.flatMap((section) => section.items).length, 261);
+  assert.equal(sections.flatMap((section) => section.items).length, 270);
   const index = sections.findIndex(section => section.section === '🎨 Tình yêu & Cơm chó 💕');
   assert.ok(index >= 0);
   assert.equal(sections[index - 1].section, '🎨 Decorative by Locket');
@@ -272,9 +272,22 @@ test('six personal captions lead the love section and all original captions rema
     'Trầm Lâm Trúc Ly', 'Nguyễn Hoàng Hảo', 'Nguyễn Tiến Thương',
     'Ngoan xinh yêu của anh', 'Thích ăn Mắm', 'yêu oiiii',
   ]);
+  const decIndex = sections.findIndex(section => section.section === '🎨 Decorative by Locket');
+  assert.ok(decIndex >= 0);
+  assert.deepEqual(sections[decIndex].items.slice(0, 9).map(item => item.caption.text), [
+    'Up locket Tiến Thương',
+    'Tiến Thương nhận làm hộ bài tập ngành cntt',
+    'Cucuc',
+    'tl',
+    'giải cứu tl',
+    'ngất lâm sàn',
+    'muốn đi chơi',
+    'chán',
+    'stress',
+  ]);
   assert.ok(sections.flatMap((section) => section.items).every((item) => !item.overlay_id.startsWith('caption:priority_')));
   // Digest captured from RC v2 before the addition: preserves every old field and its order.
-  const originalSections = sections.map((section, i) => i === index ? { ...section, items: section.items.slice(6) } : section);
+  const originalSections = sections.map((section, i) => i === index ? { ...section, items: section.items.slice(6) } : i === decIndex ? { ...section, items: section.items.slice(9) } : section);
   assert.equal(createHash('sha256').update(JSON.stringify(originalSections)).digest('hex'),
     'ba71a054892e40d389f7f17cd5b761e3227166fb1d94e668f9e8c3de16b1e040');
 });
@@ -295,7 +308,7 @@ test('matching project works with SDK user agent or missing headers', () => {
   for (const headers of [{ 'User-Agent': 'FirebaseRemoteConfig/12.0' }, {}]) {
     const result = remoteConfig({ headers, body: '{"state":"UPDATE","entries":{"camera":"{\\"max_duration\\":3}"}}' });
     assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
-    assert.equal(JSON.parse(result.entries.overlay_items).flatMap((section) => section.items).length, 261);
+    assert.equal(JSON.parse(result.entries.overlay_items).flatMap((section) => section.items).length, 270);
     assert.equal(result.entries.video_sound_enabled, 'true');
   }
 });
@@ -304,7 +317,7 @@ test('request query does not prevent matching and diagnostics omit query secrets
   const logs = [];
   const result = remoteConfig({ url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch?key=mock-secret', logs });
   assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
-  assert.ok(logs.some((line) => line.includes('[Locket RC v13] response rewritten') && line.includes('captions=261')));
+  assert.ok(logs.some((line) => line.includes('[Locket RC v13] response rewritten') && line.includes('captions=270')));
   assert.ok(logs.every((line) => !line.includes('mock-secret')));
 });
 
@@ -494,7 +507,7 @@ test('config notifications are opt-in and leave rewrite output unchanged', () =>
     assert.deepEqual(execute(file, { ...diagnosticInput, argument: 'enabled=true&diagnostics=true', notification: { post: (...args) => notifications.push(args) } }), expected);
     assert.equal(notifications.length, 1);
     assert.match(notifications[0][1], /rewritten/);
-    if (file === 'Locket_Unlocked_Clean.js') assert.match(notifications[0][2], /camera=15s.*captions=261/);
+    if (file === 'Locket_Unlocked_Clean.js') assert.match(notifications[0][2], /camera=15s.*captions=270/);
   }
 });
 
@@ -651,7 +664,8 @@ test('RevenueCat valid response keeps other subscriber data and original Locket 
     assert.deepEqual(output.subscriber.subscriptions.existing, input.subscriber.subscriptions.existing);
     assert.deepEqual(output.subscriber.entitlements.existing, input.subscriber.entitlements.existing);
     assert.equal(output.subscriber.entitlements.Gold.product_identifier, 'com.locket02.premium.yearly');
-    assert.equal(output.subscriber.entitlements.Gold.expires_date, '9999-12-18T01:04:17Z');
+    assert.equal(output.subscriber.entitlements.Gold.expires_date, '2099-12-18T01:04:17Z');
+    assert.equal(output.subscriber.entitlements.Gold.purchase_date, '2024-01-01T00:00:00Z');
     assert.equal(output.subscriber.subscriptions['com.locket02.premium.yearly'].store, 'app_store');
   }
 });
