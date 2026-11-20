@@ -2,7 +2,8 @@
 (function () {
     var diagnosticsEnabled = false;
     if (typeof $argument !== "undefined") {
-        var control = typeof $argument === "string" ? /^enabled=(true|false)(?:&diagnostics=(true|false))?$/i.exec($argument.trim()) : null;
+        var clean = typeof $argument === "string" ? $argument.trim().replace(/^["']|["']$/g, "") : "";
+        var control = /^enabled=(true|false)(?:&diagnostics=(true|false))?$/i.exec(clean);
         if (!control || control[1].toLowerCase() === "false") {
             if (typeof console !== "undefined" && typeof console.log === "function") {
                 console.log("[Locket v13] bypass: " + (control ? "enabled=false" : "invalid module argument"));
@@ -88,14 +89,11 @@
             logStatus("skipped: invalid response or upstream error");
             return {};
         }
-        // Force full UPDATE with entries required: even when upstream returns
-        // NO_CHANGE, EMPTY_CONFIG or missing entries, rewrite into UPDATE so that
-        // 15s camera, full captions and AI filters never revert to 3s default behavior.
+        // NO_CHANGE has no complete config. Turning it into UPDATE could discard
+        // unrelated settings from the app's cache. Leave it intact and report it.
         if (obj.state !== "UPDATE" || !obj.entries || typeof obj.entries !== "object" || Array.isArray(obj.entries)) {
-            obj.state = "UPDATE";
-            if (!obj.entries || typeof obj.entries !== "object" || Array.isArray(obj.entries)) {
-                obj.entries = {};
-            }
+            logStatus("skipped: full UPDATE with entries required; " + describeResponseShape(obj));
+            return {};
         }
         var activeGroups = Object.keys(LOCKET_OPTIONS).filter(function (group) {
             return LOCKET_OPTIONS[group] === true;
@@ -275,7 +273,7 @@
                 allows_custom_filters: true,
                 show_filter_button: true,
                 sheet_enabled: true,
-                open_sheet_immediately: false,
+                open_sheet_immediately: true,
                 sheet_filters: [
                     {
                         title: { en: "Goofy" },

@@ -1,7 +1,8 @@
 // Shared module control: enabled=false bypasses every rewrite in this script.
 (function () {
     if (typeof $argument !== "undefined") {
-        var control = typeof $argument === "string" ? /^enabled=(true|false)$/i.exec($argument.trim()) : null;
+        var clean = typeof $argument === "string" ? $argument.trim().replace(/^["']|["']$/g, "") : "";
+        var control = /^enabled=(true|false)$/i.exec(clean);
         if (!control || control[1].toLowerCase() === "false") {
             if (typeof console !== "undefined" && typeof console.log === "function") {
                 console.log("[Locket v13] bypass: " + (control ? "enabled=false" : "invalid module argument"));
@@ -11,7 +12,7 @@
         }
     }
 // Author: Nguyen Tien Thuong
-const version = 'V1.0.5';
+const version = 'V1.0.6';
 
 function setHeaderValue(e, a, d) {
     var r = a.toLowerCase();
@@ -23,19 +24,9 @@ function setHeaderValue(e, a, d) {
     e[name] = d;
 }
 
-function removeHeader(e, a) {
-    var r = a.toLowerCase();
-    var matches = Object.keys(e).filter(function (key) {
-        return key.toLowerCase() === r;
-    });
-    matches.forEach(function (key) { delete e[key]; });
-}
-
 var modifiedHeaders = Object.assign({}, $request.headers || {});
 
 setHeaderValue(modifiedHeaders, "X-RevenueCat-ETag", "");
-removeHeader(modifiedHeaders, "If-None-Match");
-removeHeader(modifiedHeaders, "If-Modified-Since");
 
 setHeaderValue(modifiedHeaders, "X-Forwarded-For", "8.8.8.8");
 setHeaderValue(modifiedHeaders, "CF-Connecting-IP", "8.8.8.8");

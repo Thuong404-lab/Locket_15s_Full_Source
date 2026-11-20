@@ -2,7 +2,8 @@
 (function () {
     var diagnosticsEnabled = false;
     if (typeof $argument !== "undefined") {
-        var control = typeof $argument === "string" ? /^enabled=(true|false)(?:&diagnostics=(true|false))?$/i.exec($argument.trim()) : null;
+        var clean = typeof $argument === "string" ? $argument.trim().replace(/^["']|["']$/g, "") : "";
+        var control = /^enabled=(true|false)(?:&diagnostics=(true|false))?$/i.exec(clean);
         if (!control || control[1].toLowerCase() === "false") {
             if (typeof console !== "undefined" && typeof console.log === "function") {
                 console.log("[Locket v13] bypass: " + (control ? "enabled=false" : "invalid module argument"));

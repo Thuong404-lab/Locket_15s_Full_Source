@@ -1,7 +1,8 @@
 // Shared module control: enabled=false bypasses every rewrite in this script.
 (function () {
     if (typeof $argument !== "undefined") {
-        var control = typeof $argument === "string" ? /^enabled=(true|false)$/i.exec($argument.trim()) : null;
+        var clean = typeof $argument === "string" ? $argument.trim().replace(/^["']|["']$/g, "") : "";
+        var control = /^enabled=(true|false)$/i.exec(clean);
         if (!control || control[1].toLowerCase() === "false") {
             if (typeof console !== "undefined" && typeof console.log === "function") {
                 console.log("[Locket v13] bypass: " + (control ? "enabled=false" : "invalid module argument"));
@@ -64,18 +65,11 @@ function rewriteRevenueCatResponse() {
       obj.subscriber.subscriptions[product] = locket02;
     } else {
       obj.subscriber.subscriptions['com.locket02.premium.yearly'] = locket02;
-      obj.subscriber.subscriptions['com.locket.gold.yearly'] = locket02;
     }
     obj.subscriber.entitlements[entitlement] = locket01;
-    if (entitlement === 'Gold') {
-      obj.subscriber.entitlements.gold = locket01;
-      obj.subscriber.entitlements.pro = locket01;
-    }
   } else {
     obj.subscriber.subscriptions['com.locket02.premium.yearly'] = locket02;
-    obj.subscriber.subscriptions['com.locket.gold.yearly'] = locket02;
     obj.subscriber.entitlements.Gold = locket01;
-    obj.subscriber.entitlements.pro = locket01;
   }
   return { body: JSON.stringify(obj) };
 }
