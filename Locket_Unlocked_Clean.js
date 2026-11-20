@@ -78,16 +78,21 @@
             return {};
         }
 
-        var obj;
-        try {
-            obj = JSON.parse($response.body);
-        } catch (e) {
-            logStatus("skipped: response is not JSON");
-            return {};
-        }
-        if (!obj || typeof obj !== "object" || Array.isArray(obj) || obj.error) {
-            logStatus("skipped: invalid response or upstream error");
-            return {};
+        var obj = {};
+        var isRawEmptyOr304 = !$response.body || typeof $response.body !== "string" || $response.body.trim() === "" || $response.status === 304;
+        if (isRawEmptyOr304) {
+            obj = { state: "UPDATE", entries: {} };
+        } else {
+            try {
+                obj = JSON.parse($response.body);
+            } catch (e) {
+                logStatus("skipped: response is not JSON");
+                return {};
+            }
+            if (!obj || typeof obj !== "object" || Array.isArray(obj) || obj.error) {
+                logStatus("skipped: invalid response or upstream error");
+                return {};
+            }
         }
         // Force full UPDATE with entries required: even when upstream returns
         // NO_CHANGE, EMPTY_CONFIG or missing entries, rewrite into UPDATE so that
