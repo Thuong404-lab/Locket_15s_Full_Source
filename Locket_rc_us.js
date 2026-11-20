@@ -31,7 +31,7 @@ function notifyDiagnostic(outcome, message) {
         // Diagnostic API/storage failures must not block the rewrite.
     }
 }
-var target = /^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch(?:\?|$)/;
+var target = /^https:\/\/firebaseremoteconfig\.googleapis\.com(?::443)?\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch(?:\?|$)/;
 function rewriteConfigRequest() {
     if (!target.test($request.url || "")) return {};
     if ($request.method !== "POST") {

@@ -42,7 +42,7 @@ test('compatible module enables all four scripts without template substitution',
   assert.equal(lines.length, 4);
   for (const line of lines) {
     assert.ok(line.includes('argument="enabled=true"'));
-    assert.match(line, /script-path=[^,\s]+\?v=17(?:,|$)/);
+    assert.match(line, /script-path=[^,\s]+\?v=18(?:,|$)/);
     const file = new URL(line.match(/script-path=([^,\s]+)/)[1]).pathname.split('/').pop();
     const argument = line.match(/argument="([^"]+)"/)[1];
     const input = { body: '{"state":"UPDATE","entries":{},"subscriber":{"subscriptions":{},"entitlements":{}}}', requestBody: '{"country_code":"vn"}' };
@@ -212,7 +212,7 @@ test('Goofy/Looks, AI filters and custom appearance UI are enabled and preserved
   assert.equal(config.allows_custom_filters, true);
   assert.equal(config.show_filter_button, true);
   assert.equal(config.sheet_enabled, true);
-  assert.equal(config.open_sheet_immediately, true);
+  assert.equal(config.open_sheet_immediately, false);
   assert.ok(config.sheet_filters.length > 0);
   assert.ok(config.picker_filters.includes('beard'));
   assert.ok(config.picker_filters.includes('looks_maxxing'));

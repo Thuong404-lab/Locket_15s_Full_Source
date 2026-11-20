@@ -4,9 +4,9 @@
 
 Source cho module rewrite Locket, gồm 4 file JavaScript và `Locket_15s.sgmodule`.
 
-## Bản mới nhất: v17 — Xử lý 304/Empty-body, max-size=-1, Ép cứng UPDATE Remote Config (15s, 270 Caption, AI)
+## Bản mới nhất: v18 — Hỗ trợ Port :443, Mở rộng Pattern Remote Config, Fix Tương tác Filter & 270 Caption
 
-Bản **v17** xử lý triệt để phản hồi HTTP 304 / empty-body từ Firebase, sửa `max-size=-1` cho request script để không bị Shadowrocket bỏ qua và ép toàn bộ sang `state: "UPDATE"` kèm camera 15s, 270 caption và bộ lọc AI:
+Bản **v18** hỗ trợ đầy đủ URL có port :443 từ Shadowrocket, nới lỏng pattern khớp Firebase Remote Config, sửa lỗi kẹt trình điều khiển filter (`open_sheet_immediately: false`) và bảo đảm nạp trọn vẹn 270 caption:
 
 1. **Khắc phục lỗi bị quay lại video 3s & mất caption (Ép cứng 15s và full caption)**:
    - **Xử lý `NO_CHANGE` của Firebase**: Trước đây khi Firebase Remote Config trả về `NO_CHANGE` (khi template trên máy chủ không đổi), script cũ bỏ qua không sửa phản hồi, khiến ứng dụng khi làm mới bộ nhớ đệm bị rơi về giá trị mặc định của bản miễn phí (3s video, mất các caption tùy chỉnh). Ở v13, script ép chuyển đổi mọi phản hồi (`NO_CHANGE`, `EMPTY_CONFIG`, v.v.) thành `state: "UPDATE"` kèm toàn bộ 261 caption và cấu hình camera 15s.
@@ -22,7 +22,7 @@ Bản **v17** xử lý triệt để phản hồi HTTP 304 / empty-body từ Fir
    - Bật các cờ: `camera_filter: "true"`, `camera_filters_enabled: "true"`, `camera_filter_enabled: "true"`, `camera_filter_sheet_enabled: "true"`.
    - Bật AI phân loại và gợi ý tương tác: `capture_classification_config`.
 
-Link cập nhật module: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=17
+Link cập nhật module: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_15s.sgmodule?v=18
 
 Kiểm thử: **71/71 test đạt 100%**.
 

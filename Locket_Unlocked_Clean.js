@@ -72,7 +72,7 @@
         }
 
         // Scope by project and fetch endpoint, not by the app/SDK User-Agent.
-        var target = /^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch(?:\?|$)/;
+        var target = /^https:\/\/firebaseremoteconfig\.googleapis\.com(?::443)?\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch(?:\?|$)/;
         if (!target.test($request.url || "")) {
             logStatus("skipped: request URL outside configured project");
             return {};
@@ -281,7 +281,7 @@
                 allows_custom_filters: true,
                 show_filter_button: true,
                 sheet_enabled: true,
-                open_sheet_immediately: true,
+                open_sheet_immediately: false,
                 sheet_filters: [
                     {
                         title: { en: "Goofy" },
