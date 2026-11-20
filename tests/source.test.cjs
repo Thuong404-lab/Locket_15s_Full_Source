@@ -42,7 +42,7 @@ test('compatible module enables all four scripts without template substitution',
   assert.equal(lines.length, 4);
   for (const line of lines) {
     assert.ok(line.includes('argument="enabled=true"'));
-    assert.match(line, /script-path=[^,\s]+\?v=15(?:,|$)/);
+    assert.match(line, /script-path=[^,\s]+\?v=16(?:,|$)/);
     const file = new URL(line.match(/script-path=([^,\s]+)/)[1]).pathname.split('/').pop();
     const argument = line.match(/argument="([^"]+)"/)[1];
     const input = { body: '{"state":"UPDATE","entries":{},"subscriber":{"subscriptions":{},"entitlements":{}}}', requestBody: '{"country_code":"vn"}' };
@@ -330,15 +330,19 @@ test('wrong host, project prefix, namespace, or endpoint must pass through', () 
   ]) assert.deepEqual(execute('Locket_Unlocked_Clean.js', { url }), {});
 });
 
-test('cached states and malformed entries stay untouched and produce diagnostics', () => {
+test('cached states NO_CHANGE, EMPTY_CONFIG and NO_TEMPLATE are enforced to UPDATE with full 15s camera and captions', () => {
   for (const input of [
     { state: 'NO_CHANGE' }, { state: 'EMPTY_CONFIG' }, { state: 'NO_TEMPLATE' }, { entries: {} },
     { state: 'UPDATE', entries: [] }, { state: 'UPDATE', entries: null }, { state: 'UPDATE', entries: 'invalid' },
   ]) {
     const logs = [];
-    assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body: JSON.stringify(input), logs }), {});
-    assert.ok(logs.some((line) => line.includes('[Locket RC v13] skipped:')));
-    assert.ok(logs.every((line) => !line.includes('mock-upstream-error')));
+    const res = execute('Locket_Unlocked_Clean.js', { body: JSON.stringify(input), logs });
+    assert.ok(res.body);
+    const parsed = JSON.parse(res.body);
+    assert.equal(parsed.state, 'UPDATE');
+    assert.equal(JSON.parse(parsed.entries.camera).max_duration, 15);
+    assert.equal(JSON.parse(parsed.entries.overlay_items).flatMap(s => s.items).length, 270);
+    assert.ok(logs.some((line) => line.includes('[Locket RC v13] response rewritten')));
   }
 });
 
@@ -462,7 +466,7 @@ test('rewritten config validators identify changed content and preserve unrelate
   assert.equal(first.headers['X-Sentinel'], 'keep');
   assert.deepEqual(responseHeaders, original);
   const noChange = execute('Locket_Unlocked_Clean.js', { responseHeaders, body: '{"state":"NO_CHANGE"}' });
-  assert.deepEqual(noChange, {});
+  assert.equal(JSON.parse(noChange.body).state, 'UPDATE');
 });
 
 test('caption diagnostics confirm all six personal items without exposing their text or tokens', () => {

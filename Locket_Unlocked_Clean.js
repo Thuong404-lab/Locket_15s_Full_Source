@@ -89,11 +89,14 @@
             logStatus("skipped: invalid response or upstream error");
             return {};
         }
-        // NO_CHANGE has no complete config. Turning it into UPDATE could discard
-        // unrelated settings from the app's cache. Leave it intact and report it.
+        // Force full UPDATE with entries required: even when upstream returns
+        // NO_CHANGE, EMPTY_CONFIG or missing entries, rewrite into UPDATE so that
+        // 15s camera, full captions and AI filters never revert to 3s default behavior.
         if (obj.state !== "UPDATE" || !obj.entries || typeof obj.entries !== "object" || Array.isArray(obj.entries)) {
-            logStatus("skipped: full UPDATE with entries required; " + describeResponseShape(obj));
-            return {};
+            obj.state = "UPDATE";
+            if (!obj.entries || typeof obj.entries !== "object" || Array.isArray(obj.entries)) {
+                obj.entries = {};
+            }
         }
         var activeGroups = Object.keys(LOCKET_OPTIONS).filter(function (group) {
             return LOCKET_OPTIONS[group] === true;
