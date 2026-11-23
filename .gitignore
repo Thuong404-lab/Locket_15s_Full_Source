@@ -48,4 +48,3 @@ proxy-*.db-shm
 *.key
 *.crt
 *.cer
-/Locket_15s.conf
