@@ -275,10 +275,10 @@ test('six personal captions lead the love section and all original captions rema
   assert.deepEqual(sections[decIndex].items.slice(0, 9).map(item => item.caption.text), [
     'Up locket Tiến Thương',
     'Tiến Thương nhận làm hộ bài tập ngành cntt',
-    'Cucuc',
+    'Cuccuc',
     'tl',
     'giải cứu tl',
-    'ngất lâm sàn',
+    'ngất lâm sàng',
     'muốn đi chơi',
     'chán',
     'stress',
