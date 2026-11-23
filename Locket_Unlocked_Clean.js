@@ -907,7 +907,11 @@
         responseHeaders.etag = '"locket-v13-' + hash.toString(16) + '"';
         details.push("config-tag=" + hash.toString(16));
         logStatus("response rewritten: " + details.join("; ") + "; device behavior unverified");
-        return { body: rewrittenBody, headers: responseHeaders };
+        var result = { body: rewrittenBody, headers: responseHeaders };
+        if (isRawEmptyOr304 || $response.status === 304) {
+            result.status = 200;
+        }
+        return result;
     }
 
     $done(rewriteLocketConfig());

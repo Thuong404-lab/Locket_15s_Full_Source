@@ -3,10 +3,10 @@
 #!desc=Loads four scripts from the public Thuong404-lab/Locket_15s_Full_Source GitHub repository. Enforces 15s video and 270 captions with AI filter button hidden.
 
 [Script]
-revenuecat = type=http-response, pattern=^https:\/\/api\.revenuecat\.com(?::443)?\/.+\/(receipts(?:\?.*)?$|subscribers\/[^/?]+\/?(?:\?.*)?$), script-path=https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket.js?v=19, requires-body=true, max-size=-1, timeout=60, argument="enabled=true"
-deleteHeader = type=http-request, pattern=^https:\/\/api\.revenuecat\.com(?::443)?\/.+\/(receipts|subscribers), script-path=https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/del_header.js?v=19, timeout=60, argument="enabled=true"
+revenuecat = type=http-response, pattern=^https:\/\/api\.(revenuecat|rc-backup)\.com(?::443)?\/.+\/(receipts(?:\?.*)?$|subscribers\/[^/?]+\/?(?:\?.*)?$), script-path=https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket.js?v=19, requires-body=true, max-size=-1, timeout=60, argument="enabled=true"
+deleteHeader = type=http-request, pattern=^https:\/\/api\.(revenuecat|rc-backup)\.com(?::443)?\/.+\/(receipts|subscribers), script-path=https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/del_header.js?v=19, timeout=60, argument="enabled=true"
 locket_rc = type=http-response, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com(?::443)?\/v1\/projects\/locket-4252a\/.+, script-path=https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_Unlocked_Clean.js?v=19, requires-body=true, max-size=-1, timeout=60, argument="enabled=true"
 locket_rc_us = type=http-request, pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com(?::443)?\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch, requires-body=1, max-size=-1, script-path=https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_rc_us.js?v=19, timeout=10, argument="enabled=true"
 
 [MITM]
-hostname = api.revenuecat.com, firebaseremoteconfig.googleapis.com
+hostname = api.revenuecat.com, api.rc-backup.com, firebaseremoteconfig.googleapis.com

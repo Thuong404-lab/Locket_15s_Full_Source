@@ -28,10 +28,20 @@ function rewriteRevenueCatResponse() {
   if (typeof ua !== 'string' || !ua) return {};
 
   let obj;
-  try {
-    obj = JSON.parse($response.body);
-  } catch (e) {
-    return {};
+  const isStatus304 = typeof $response !== 'undefined' && $response.status === 304;
+  if (isStatus304) {
+    obj = {
+      subscriber: {
+        subscriptions: {},
+        entitlements: {}
+      }
+    };
+  } else {
+    try {
+      obj = JSON.parse($response.body);
+    } catch (e) {
+      return {};
+    }
   }
   if (!isObject(obj) || !isObject(obj.subscriber) ||
       !isObject(obj.subscriber.subscriptions) || !isObject(obj.subscriber.entitlements)) {
@@ -71,7 +81,11 @@ function rewriteRevenueCatResponse() {
     obj.subscriber.subscriptions['com.locket02.premium.yearly'] = locket02;
     obj.subscriber.entitlements.Gold = locket01;
   }
-  return { body: JSON.stringify(obj) };
+  const res = { body: JSON.stringify(obj) };
+  if (isStatus304) {
+    res.status = 200;
+  }
+  return res;
 }
 
 $done(rewriteRevenueCatResponse());

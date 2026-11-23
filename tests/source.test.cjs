@@ -79,12 +79,12 @@ for (const file of scripts) {
   test(`JavaScript syntax: ${file}`, () => { new vm.Script(read(file), { filename: file }); });
 }
 
-test('module references all four existing scripts and declares only its two MITM hosts', () => {
+test('module references all four existing scripts and declares only its three MITM hosts', () => {
   const moduleText = read('Locket_15s.sgmodule');
   const references = [...moduleText.matchAll(/script-path=([^,\s]+)/g)].map((m) => new URL(m[1]).pathname.split('/').pop());
   assert.deepEqual(references.sort(), [...scripts].sort());
   const hosts = moduleText.match(/^hostname\s*=\s*(.+)$/m)[1].split(',').map((h) => h.trim());
-  assert.deepEqual(hosts, ['api.revenuecat.com', 'firebaseremoteconfig.googleapis.com']);
+  assert.deepEqual(hosts, ['api.revenuecat.com', 'api.rc-backup.com', 'firebaseremoteconfig.googleapis.com']);
 });
 
 test('deployment readiness: script paths must be real HTTPS locations', () => {
@@ -693,3 +693,41 @@ test('header rewrite handles absent headers', () => {
   assert.equal(output.headers['X-RevenueCat-ETag'], '');
   assert.equal(output.headers['CF-IPCountry'], 'US');
 });
+
+test('header rewrite strips conditional caching headers If-None-Match and If-Modified-Since', () => {
+  const output = execute('del_header.js', {
+    headers: {
+      'If-None-Match': 'W/"cached-etag"',
+      'if-modified-since': 'Wed, 21 Oct 2024 07:28:00 GMT',
+      'User-Agent': 'Locket/2.70.0',
+    },
+  });
+  assert.equal(output.headers['If-None-Match'], undefined);
+  assert.equal(output.headers['if-modified-since'], undefined);
+  assert.equal(output.headers['User-Agent'], 'Locket/2.70.0');
+});
+
+test('RevenueCat 304 response fallback converts to 200 with active Gold entitlement', () => {
+  const output = execute('Locket.js', {
+    responseStatus: 304,
+    body: '',
+    headers: { 'User-Agent': 'Locket/2.70.0' },
+  });
+  assert.equal(output.status, 200);
+  assert.ok(output.body);
+  const parsed = JSON.parse(output.body);
+  assert.equal(parsed.subscriber.entitlements.Gold.product_identifier, 'com.locket02.premium.yearly');
+});
+
+test('Remote Config 304 response is converted to 200 with full 15s camera entries', () => {
+  const output = execute('Locket_Unlocked_Clean.js', {
+    responseStatus: 304,
+    body: '',
+  });
+  assert.equal(output.status, 200);
+  assert.ok(output.body);
+  const parsed = JSON.parse(output.body);
+  assert.equal(parsed.state, 'UPDATE');
+  assert.equal(JSON.parse(parsed.entries.camera).max_duration, 15);
+});
+

@@ -26,6 +26,14 @@ function setHeaderValue(e, a, d) {
 
 var modifiedHeaders = Object.assign({}, $request.headers || {});
 
+// Strip conditional caching headers so RevenueCat server returns 200 OK with full payload instead of 304 Not Modified
+Object.keys(modifiedHeaders).forEach(function (key) {
+    var lower = key.toLowerCase();
+    if (lower === "if-none-match" || lower === "if-modified-since") {
+        delete modifiedHeaders[key];
+    }
+});
+
 setHeaderValue(modifiedHeaders, "X-RevenueCat-ETag", "");
 
 setHeaderValue(modifiedHeaders, "X-Forwarded-For", "8.8.8.8");
