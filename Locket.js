@@ -67,18 +67,24 @@ function rewriteRevenueCatResponse() {
     product_identifier: 'com.locket02.premium.yearly',
     expires_date: '2099-12-18T01:04:17Z',
   };
+  const knownProducts = [
+    'com.locket02.premium.yearly',
+    'com.locket02.premium.monthly',
+    'locket_gold_yearly',
+    'locket_gold_monthly'
+  ];
+  knownProducts.forEach(function (pid) {
+    obj.subscriber.subscriptions[pid] = Object.assign({}, locket02);
+  });
   const match = Object.keys(mapping).find(key => ua.toLowerCase().includes(key.toLowerCase()));
   if (match) {
     const [entitlement, product] = mapping[match];
     if (product) {
       locket01.product_identifier = product;
       obj.subscriber.subscriptions[product] = locket02;
-    } else {
-      obj.subscriber.subscriptions['com.locket02.premium.yearly'] = locket02;
     }
     obj.subscriber.entitlements[entitlement] = locket01;
   } else {
-    obj.subscriber.subscriptions['com.locket02.premium.yearly'] = locket02;
     obj.subscriber.entitlements.Gold = locket01;
   }
   const res = { body: JSON.stringify(obj) };

@@ -42,7 +42,7 @@ test('compatible module enables all four scripts without template substitution',
   assert.equal(lines.length, 4);
   for (const line of lines) {
     assert.ok(line.includes('argument="enabled=true"'));
-    assert.match(line, /script-path=[^,\s]+\?v=19(?:,|$)/);
+    assert.match(line, /script-path=[^,\s]+\?v=20(?:,|$)/);
     const file = new URL(line.match(/script-path=([^,\s]+)/)[1]).pathname.split('/').pop();
     const argument = line.match(/argument="([^"]+)"/)[1];
     const input = { body: '{"state":"UPDATE","entries":{},"subscriber":{"subscriptions":{},"entitlements":{}}}', requestBody: '{"country_code":"vn"}' };
@@ -103,16 +103,16 @@ test('all four direct camera duration aliases are 15 seconds', () => {
   for (const key of ['gold_max_duration', 'goldMaxDuration', 'max_duration', 'maxDuration']) assert.equal(camera[key], 15, key);
 });
 
-test('gallery photos remain enabled while video flags are disabled', () => {
+test('gallery photos and video upload remain enabled', () => {
   const { entries } = remoteConfig();
   assert.equal(JSON.parse(entries.feature_gates).camera_roll, 'enabled');
   assert.equal(JSON.parse(entries.upsell_features).camera_roll, true);
   assert.equal(entries.camera_roll_preview_enabled, 'true');
-  for (const key of ['camera_roll_video_enabled', 'camera_roll_video_upload_enabled', 'internal_camera_roll_video_upload_enabled', 'longer_camera_roll_videos_enabled']) assert.equal(entries[key], 'false', key);
+  for (const key of ['camera_roll_video_enabled', 'camera_roll_video_upload_enabled', 'internal_camera_roll_video_upload_enabled', 'longer_camera_roll_videos_enabled']) assert.equal(entries[key], 'true', key);
   const gallery = JSON.parse(entries.camera_roll);
   const limits = Object.entries(gallery).filter(([key]) => /duration/i.test(key));
   assert.equal(limits.length, 9);
-  for (const [key, value] of limits) assert.equal(value, 0, key);
+  for (const [key, value] of limits) assert.equal(value, 15, key);
 });
 
 test('sound and microphone configuration stays enabled', () => {
@@ -278,7 +278,7 @@ test('six personal captions lead the love section and all original captions rema
     'Cucuc',
     'tl',
     'giải cứu tl',
-    'ngất lâm sàng',
+    'ngất lâm sàn',
     'muốn đi chơi',
     'chán',
     'stress',

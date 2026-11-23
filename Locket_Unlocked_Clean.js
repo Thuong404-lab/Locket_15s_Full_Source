@@ -248,21 +248,21 @@
                 telephoto: true,
                 srgb: true,
                 lanczos: true,
-                quality_mbps: 0.6,
-                qualityMbps: 0.6
+                quality_mbps: 1.5,
+                qualityMbps: 1.5
             }),
             camera_roll: JSON.stringify({
-                gold_max_duration: 0.0,
-                goldMaxDuration: 0.0,
-                video_max_duration: 0.0,
-                videoMaxDuration: 0.0,
-                max_duration: 0.0,
-                maxDuration: 0.0,
-                trim_max_duration: 0.0,
-                trimMaxDuration: 0.0,
-                camera_roll_max_duration: 0.0,
-                quality_mbps: 0.6,
-                qualityMbps: 0.6,
+                gold_max_duration: 15.0,
+                goldMaxDuration: 15.0,
+                video_max_duration: 15.0,
+                videoMaxDuration: 15.0,
+                max_duration: 15.0,
+                maxDuration: 15.0,
+                trim_max_duration: 15.0,
+                trimMaxDuration: 15.0,
+                camera_roll_max_duration: 15.0,
+                quality_mbps: 1.5,
+                qualityMbps: 1.5,
                 flash_button: true
             }),
             live_photos: JSON.stringify({
@@ -281,10 +281,10 @@
                 picker_filters: []
             }),
             camera_roll_preview_enabled: "true",
-            camera_roll_video_enabled: "false",
-            camera_roll_video_upload_enabled: "false",
-            internal_camera_roll_video_upload_enabled: "false",
-            longer_camera_roll_videos_enabled: "false",
+            camera_roll_video_enabled: "true",
+            camera_roll_video_upload_enabled: "true",
+            internal_camera_roll_video_upload_enabled: "true",
+            longer_camera_roll_videos_enabled: "true",
             video_sound_enabled: "true",
             microphone_enabled: "true",
             camera_microphone_enabled: "true",
@@ -307,11 +307,11 @@
             video_enabled: "true",
             longer_video: "true",
             gold_video_max_duration: "15.0",
-            upload_main: "false",
-            upload_main_image_quality: "0.6",
-            upload_main_image_size: "1440",
-            upload_thumbnail_image_quality: "0.8",
-            upload_thumbnail_image_size: "1020"
+            upload_main: "true",
+            upload_main_image_quality: "0.9",
+            upload_main_image_size: "2048",
+            upload_thumbnail_image_quality: "0.85",
+            upload_thumbnail_image_size: "1080"
         });
 
         applyOverrides({
@@ -565,7 +565,7 @@
                         { overlay_id: "caption:cucuc", source: "remote", caption: { background: { colors: ["#FACC15", "#EAB308"] }, icon: { data: "🐥", type: "emoji" }, max_lines: 1, text: "Cucuc", text_color: "#713F12", type: "static_content" } },
                         { overlay_id: "caption:tl", source: "remote", caption: { background: { colors: ["#F472B6", "#EC4899"] }, icon: { data: "🌸", type: "emoji" }, max_lines: 1, text: "tl", text_color: "#FFFFFF", type: "static_content" } },
                         { overlay_id: "caption:giai_cuu_tl", source: "remote", caption: { background: { colors: ["#EF4444", "#DC2626"] }, icon: { data: "🚨", type: "emoji" }, max_lines: 1, text: "giải cứu tl", text_color: "#FFFFFF", type: "static_content" } },
-                        { overlay_id: "caption:ngat_lam_sang", source: "remote", caption: { background: { colors: ["#64748B", "#475569"] }, icon: { data: "😵‍💫", type: "emoji" }, max_lines: 1, text: "ngất lâm sàng", text_color: "#FFFFFF", type: "static_content" } },
+                        { overlay_id: "caption:ngat_lam_san", source: "remote", caption: { background: { colors: ["#64748B", "#475569"] }, icon: { data: "😵‍💫", type: "emoji" }, max_lines: 1, text: "ngất lâm sàn", text_color: "#FFFFFF", type: "static_content" } },
                         { overlay_id: "caption:muon_di_choi", source: "remote", caption: { background: { colors: ["#10B981", "#059669"] }, icon: { data: "🛵", type: "emoji" }, max_lines: 1, text: "muốn đi chơi", text_color: "#FFFFFF", type: "static_content" } },
                         { overlay_id: "caption:chan_qua", source: "remote", caption: { background: { colors: ["#94A3B8", "#64748B"] }, icon: { data: "🥱", type: "emoji" }, max_lines: 1, text: "chán", text_color: "#FFFFFF", type: "static_content" } },
                         { overlay_id: "caption:stress_qua", source: "remote", caption: { background: { colors: ["#F97316", "#EA580C"] }, icon: { data: "🤯", type: "emoji" }, max_lines: 1, text: "stress", text_color: "#FFFFFF", type: "static_content" } },
@@ -888,7 +888,7 @@
             share_history_config: JSON.stringify({ prompt_enabled: true, fetching_enabled: true })
         });
         var details = ["groups=" + activeGroups.join(",")];
-        if (LOCKET_OPTIONS.camera === true) details.push("camera=15s, gallery-video=false");
+        if (LOCKET_OPTIONS.camera === true) details.push("camera=15s, gallery-video=15s");
         if (LOCKET_OPTIONS.audio === true) details.push("sound=true");
         if (LOCKET_OPTIONS.captions === true) {
             var captionSections = JSON.parse(obj.entries.overlay_items);
