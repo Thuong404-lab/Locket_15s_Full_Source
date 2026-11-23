@@ -33,7 +33,10 @@ function rewriteRevenueCatResponse() {
     obj = {
       subscriber: {
         subscriptions: {},
-        entitlements: {}
+        entitlements: {},
+        non_subscriptions: {},
+        original_purchase_date: '2024-01-01T00:00:00Z',
+        original_app_user_id: '$RCAnonymousID:locket_gold'
       }
     };
   } else {
@@ -46,6 +49,9 @@ function rewriteRevenueCatResponse() {
   if (!isObject(obj) || !isObject(obj.subscriber) ||
       !isObject(obj.subscriber.subscriptions) || !isObject(obj.subscriber.entitlements)) {
     return {};
+  }
+  if (!obj.subscriber.non_subscriptions) {
+    obj.subscriber.non_subscriptions = {};
   }
 
   obj.Attention = 'Congratulations! Please do not sell or share it with others!';
@@ -66,6 +72,9 @@ function rewriteRevenueCatResponse() {
     purchase_date: '2024-01-01T00:00:00Z',
     product_identifier: 'com.locket02.premium.yearly',
     expires_date: '2099-12-18T01:04:17Z',
+    ownership_type: 'PURCHASED',
+    store: 'app_store',
+    is_sandbox: false
   };
   const knownProducts = [
     'com.locket02.premium.yearly',
