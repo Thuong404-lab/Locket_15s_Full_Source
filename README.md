@@ -4,7 +4,7 @@
 
 ## Tính năng
 - Mở rộng thời lượng quay video lên 15 giây.
-- Tích hợp 270 caption tùy chỉnh, phân loại theo 10 chủ đề.
+- Tích hợp 280 caption tùy chỉnh, phân loại theo 10 chủ đề.
 - Tùy chỉnh cấu hình Camera, thư viện ảnh và Live Photos.
 - Điều chỉnh các tính năng âm thanh, microphone và widget.
 - Tối ưu cấu hình mạng, CDN và bộ nhớ đệm.

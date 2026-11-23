@@ -261,7 +261,7 @@ test('all six requested captions retain their emoji', () => {
 test('six personal captions lead the love section and all original captions remain intact', () => {
   const sections = JSON.parse(remoteConfig().entries.overlay_items);
   assert.equal(sections.length, 10);
-  assert.equal(sections.flatMap((section) => section.items).length, 270);
+  assert.equal(sections.flatMap((section) => section.items).length, 280);
   const index = sections.findIndex(section => section.section === '🎨 Tình yêu & Cơm chó 💕');
   assert.ok(index >= 0);
   assert.equal(sections[index - 1].section, '🎨 Decorative by Locket');
@@ -278,14 +278,14 @@ test('six personal captions lead the love section and all original captions rema
     'Cucuc',
     'tl',
     'giải cứu tl',
-    'ngất lâm sàn',
+    'ngất lâm sàng',
     'muốn đi chơi',
     'chán',
     'stress',
   ]);
   assert.ok(sections.flatMap((section) => section.items).every((item) => !item.overlay_id.startsWith('caption:priority_')));
   // Digest captured from RC v2 before the addition: preserves every old field and its order.
-  const originalSections = sections.map((section, i) => i === index ? { ...section, items: section.items.slice(6) } : i === decIndex ? { ...section, items: section.items.slice(9) } : section);
+  const originalSections = sections.map((section, i) => i === index ? { ...section, items: section.items.slice(6) } : i === decIndex ? { ...section, items: section.items.slice(9, 15) } : section);
   assert.equal(createHash('sha256').update(JSON.stringify(originalSections)).digest('hex'),
     'ba71a054892e40d389f7f17cd5b761e3227166fb1d94e668f9e8c3de16b1e040');
 });
@@ -306,7 +306,7 @@ test('matching project works with SDK user agent or missing headers', () => {
   for (const headers of [{ 'User-Agent': 'FirebaseRemoteConfig/12.0' }, {}]) {
     const result = remoteConfig({ headers, body: '{"state":"UPDATE","entries":{"camera":"{\\"max_duration\\":3}"}}' });
     assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
-    assert.equal(JSON.parse(result.entries.overlay_items).flatMap((section) => section.items).length, 270);
+    assert.equal(JSON.parse(result.entries.overlay_items).flatMap((section) => section.items).length, 280);
     assert.equal(result.entries.video_sound_enabled, 'true');
   }
 });
@@ -315,7 +315,7 @@ test('request query does not prevent matching and diagnostics omit query secrets
   const logs = [];
   const result = remoteConfig({ url: 'https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch?key=mock-secret', logs });
   assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
-  assert.ok(logs.some((line) => line.includes('[Locket RC v13] response rewritten') && line.includes('captions=270')));
+  assert.ok(logs.some((line) => line.includes('[Locket RC v13] response rewritten') && line.includes('captions=280')));
   assert.ok(logs.every((line) => !line.includes('mock-secret')));
 });
 
@@ -339,7 +339,7 @@ test('cached states NO_CHANGE, EMPTY_CONFIG and NO_TEMPLATE are enforced to UPDA
     const parsed = JSON.parse(res.body);
     assert.equal(parsed.state, 'UPDATE');
     assert.equal(JSON.parse(parsed.entries.camera).max_duration, 15);
-    assert.equal(JSON.parse(parsed.entries.overlay_items).flatMap(s => s.items).length, 270);
+    assert.equal(JSON.parse(parsed.entries.overlay_items).flatMap(s => s.items).length, 280);
     assert.ok(logs.some((line) => line.includes('[Locket RC v13] response rewritten')));
   }
 });
@@ -509,7 +509,7 @@ test('config notifications are opt-in and leave rewrite output unchanged', () =>
     assert.deepEqual(execute(file, { ...diagnosticInput, argument: 'enabled=true&diagnostics=true', notification: { post: (...args) => notifications.push(args) } }), expected);
     assert.equal(notifications.length, 1);
     assert.match(notifications[0][1], /rewritten/);
-    if (file === 'Locket_Unlocked_Clean.js') assert.match(notifications[0][2], /camera=15s.*captions=270/);
+    if (file === 'Locket_Unlocked_Clean.js') assert.match(notifications[0][2], /camera=15s.*captions=280/);
   }
 });
 
@@ -729,5 +729,20 @@ test('Remote Config 304 response is converted to 200 with full 15s camera entrie
   const parsed = JSON.parse(output.body);
   assert.equal(parsed.state, 'UPDATE');
   assert.equal(JSON.parse(parsed.entries.camera).max_duration, 15);
+});
+
+test('all 10 new decorative captions exist and have valid structure', () => {
+  const items = JSON.parse(remoteConfig().entries.overlay_items).flatMap((section) => section.items);
+  const expectedTexts = [
+    'Alone', 'Chấm công', 'Note', 'Cái gì vậy trời',
+    'Chỗ nào quan trọng thì highlight', 'Lấy gốc 1 đêm',
+    'Buồn ngủ', 'Nô lệ đrl', 'Mắm thúiii', 'Cô bé dễ huông nhất quả đất'
+  ];
+  for (const text of expectedTexts) {
+    const item = items.find((i) => i.caption && i.caption.text === text);
+    assert.ok(item, `Caption with text "${text}" should exist`);
+    assert.match(item.overlay_id, /^caption:.+/);
+    assert.equal(item.caption.type, 'static_content');
+  }
 });
 
