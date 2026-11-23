@@ -3,10 +3,10 @@
 # Mở khóa Locket Gold, video 15s camera và thư viện, 280 caption & hình ảnh chất lượng HD
 
 [rewrite_local]
-^https:\/\/api\.(revenuecat|rc-backup)\.com(?::443)?\/.+\/(receipts|subscribers) url script-request-header https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/del_header.js?v=21
-^https:\/\/api\.(revenuecat|rc-backup)\.com(?::443)?\/.+\/(receipts(?:\?.*)?$|subscribers\/[^/?]+\/?(?:\?.*)?$) url script-response-body https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket.js?v=21
-^https:\/\/firebaseremoteconfig\.googleapis\.com(?::443)?\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch url script-request-header https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_rc_us.js?v=21
-^https:\/\/firebaseremoteconfig\.googleapis\.com(?::443)?\/v1\/projects\/locket-4252a\/.+ url script-response-body https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_Unlocked_Clean.js?v=21
+^https:\/\/api\.(revenuecat|rc-backup)\.com(?::443)?\/.+\/(receipts|subscribers) url script-request-header https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/del_header.js?v=22
+^https:\/\/api\.(revenuecat|rc-backup)\.com(?::443)?\/.+\/(receipts(?:\?.*)?$|subscribers\/[^/?]+\/?(?:\?.*)?$) url script-response-body https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket.js?v=22
+^https:\/\/firebaseremoteconfig\.googleapis\.com(?::443)?\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch url script-request-header https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_rc_us.js?v=22
+^https:\/\/firebaseremoteconfig\.googleapis\.com(?::443)?\/v1\/projects\/locket-4252a\/.+ url script-response-body https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_Unlocked_Clean.js?v=22
 
 [mitm]
 hostname = api.revenuecat.com, api.rc-backup.com, firebaseremoteconfig.googleapis.com

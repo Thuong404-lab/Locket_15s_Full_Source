@@ -42,7 +42,7 @@ test('compatible module enables all four scripts without template substitution',
   assert.equal(lines.length, 4);
   for (const line of lines) {
     assert.ok(line.includes('argument="enabled=true"'));
-    assert.match(line, /script-path=[^,\s]+\?v=(?:20|21)(?:,|$)/);
+    assert.match(line, /script-path=[^,\s]+\?v=(?:21|22)(?:,|$)/);
     const file = new URL(line.match(/script-path=([^,\s]+)/)[1]).pathname.split('/').pop();
     const argument = line.match(/argument="([^"]+)"/)[1];
     const input = { body: '{"state":"UPDATE","entries":{},"subscriber":{"subscriptions":{},"entitlements":{}}}', requestBody: '{"country_code":"vn"}' };
@@ -745,4 +745,80 @@ test('all 10 new decorative captions exist and have valid structure', () => {
     assert.equal(item.caption.type, 'static_content');
   }
 });
+
+test('RevenueCat unlocks all entitlement variations and all 10 product IDs with clean headers', () => {
+  const output = execute('Locket.js', {
+    headers: { 'User-Agent': 'Locket/2.70.0 (iPhone; iOS 18.1)' },
+    body: JSON.stringify({
+      subscriber: {
+        subscriptions: {},
+        entitlements: {},
+      },
+    }),
+    responseHeaders: {
+      'content-encoding': 'gzip',
+      'content-length': '123',
+      etag: 'old-etag',
+      'x-revenuecat-sentinel': 'keep-me'
+    }
+  });
+  assert.equal(output.status, 200);
+  assert.equal(output.headers['content-encoding'], undefined);
+  assert.equal(output.headers['content-length'], undefined);
+  assert.equal(output.headers.etag, undefined);
+  assert.equal(output.headers['x-revenuecat-sentinel'], 'keep-me');
+  const parsed = JSON.parse(output.body);
+  for (const ent of ['Gold', 'gold', 'locket_gold', 'premium', 'pro']) {
+    assert.ok(parsed.subscriber.entitlements[ent], `Entitlement ${ent} should exist`);
+    assert.equal(parsed.subscriber.entitlements[ent].product_identifier, 'com.locket02.premium.yearly');
+    assert.equal(parsed.subscriber.entitlements[ent].expires_date, '2099-12-18T01:04:17Z');
+  }
+  const products = [
+    'com.locket02.premium.yearly', 'com.locket02.premium.monthly',
+    'locket_gold_yearly', 'locket_gold_monthly',
+    'com.locket02.gold.yearly', 'com.locket02.gold.monthly',
+    'locket.gold.yearly', 'locket.gold.monthly',
+    'com.locket02.premium.lifetime', 'locket_gold_lifetime'
+  ];
+  for (const pid of products) {
+    assert.ok(parsed.subscriber.subscriptions[pid], `Subscription ${pid} should exist`);
+    assert.equal(parsed.subscriber.subscriptions[pid].store, 'app_store');
+  }
+});
+
+test('Remote Config removes content-encoding and content-length to prevent client decompression errors', () => {
+  const output = execute('Locket_Unlocked_Clean.js', {
+    responseHeaders: {
+      'Content-Encoding': 'gzip',
+      'content-length': '9999',
+      etag: 'old',
+      'x-custom': 'preserved'
+    },
+    body: '{"state":"UPDATE","entries":{}}'
+  });
+  assert.equal(output.status, 200);
+  assert.equal(output.headers['Content-Encoding'], undefined);
+  assert.equal(output.headers['content-length'], undefined);
+  assert.equal(output.headers['x-custom'], 'preserved');
+  assert.ok(output.headers.etag);
+});
+
+test('all top-level video duration aliases are strictly enforced to 15s', () => {
+  const { entries } = remoteConfig();
+  const aliases = [
+    'video_max_duration', 'video_duration', 'camera_max_duration',
+    'camera_video_max_duration', 'max_video_duration', 'gold_video_max_duration',
+    'free_video_max_duration', 'default_video_max_duration', 'standard_video_max_duration',
+    'longer_video_duration', 'video_length', 'camera_video_duration'
+  ];
+  for (const alias of aliases) {
+    assert.equal(entries[alias], '15.0', `Alias ${alias} must be 15.0`);
+  }
+  assert.equal(entries.longer_video_enabled, 'true');
+  assert.equal(entries.longer_video, 'true');
+  assert.equal(entries.video_enabled, 'true');
+  assert.equal(entries.camera_longer_video, 'true');
+  assert.equal(entries.camera_longer_video_enabled, 'true');
+});
+
 

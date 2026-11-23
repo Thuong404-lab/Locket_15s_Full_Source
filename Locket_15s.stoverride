@@ -14,25 +14,25 @@ http:
       type: request
       require-body: false
       timeout: 60
-      script-path: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/del_header.js?v=21
+      script-path: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/del_header.js?v=22
 
     - match: ^https:\/\/api\.(revenuecat|rc-backup)\.com(?::443)?\/.+\/(receipts(?:\?.*)?$|subscribers\/[^/?]+\/?(?:\?.*)?$)
       name: locket_revenuecat
       type: response
       require-body: true
       timeout: 60
-      script-path: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket.js?v=21
+      script-path: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket.js?v=22
 
     - match: ^https:\/\/firebaseremoteconfig\.googleapis\.com(?::443)?\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch
       name: locket_rc_us
       type: request
       require-body: true
       timeout: 10
-      script-path: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_rc_us.js?v=21
+      script-path: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_rc_us.js?v=22
 
     - match: ^https:\/\/firebaseremoteconfig\.googleapis\.com(?::443)?\/v1\/projects\/locket-4252a\/.+
       name: locket_rc
       type: response
       require-body: true
       timeout: 60
-      script-path: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_Unlocked_Clean.js?v=21
+      script-path: https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_Unlocked_Clean.js?v=22

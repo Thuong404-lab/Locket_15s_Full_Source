@@ -35,6 +35,7 @@ Object.keys(modifiedHeaders).forEach(function (key) {
 });
 
 setHeaderValue(modifiedHeaders, "X-RevenueCat-ETag", "");
+setHeaderValue(modifiedHeaders, "Accept-Encoding", "identity");
 
 setHeaderValue(modifiedHeaders, "X-Forwarded-For", "8.8.8.8");
 setHeaderValue(modifiedHeaders, "CF-Connecting-IP", "8.8.8.8");

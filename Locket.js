@@ -28,7 +28,7 @@ function rewriteRevenueCatResponse() {
   if (typeof ua !== 'string' || !ua) return {};
 
   let obj;
-  const isStatus304 = typeof $response !== 'undefined' && $response.status === 304;
+  const isStatus304 = typeof $response !== 'undefined' && ($response.status === 304 || $response.status === "304");
   if (isStatus304) {
     obj = {
       subscriber: {
@@ -71,11 +71,18 @@ function rewriteRevenueCatResponse() {
     'com.locket02.premium.yearly',
     'com.locket02.premium.monthly',
     'locket_gold_yearly',
-    'locket_gold_monthly'
+    'locket_gold_monthly',
+    'com.locket02.gold.yearly',
+    'com.locket02.gold.monthly',
+    'locket.gold.yearly',
+    'locket.gold.monthly',
+    'com.locket02.premium.lifetime',
+    'locket_gold_lifetime'
   ];
   knownProducts.forEach(function (pid) {
     obj.subscriber.subscriptions[pid] = Object.assign({}, locket02);
   });
+  const goldEntitlements = ['Gold', 'gold', 'locket_gold', 'premium', 'pro'];
   const match = Object.keys(mapping).find(key => ua.toLowerCase().includes(key.toLowerCase()));
   if (match) {
     const [entitlement, product] = mapping[match];
@@ -84,13 +91,28 @@ function rewriteRevenueCatResponse() {
       obj.subscriber.subscriptions[product] = locket02;
     }
     obj.subscriber.entitlements[entitlement] = locket01;
+    if (match === 'Locket') {
+      goldEntitlements.forEach(function (e) {
+        obj.subscriber.entitlements[e] = locket01;
+      });
+    }
   } else {
-    obj.subscriber.entitlements.Gold = locket01;
+    goldEntitlements.forEach(function (e) {
+      obj.subscriber.entitlements[e] = locket01;
+    });
   }
-  const res = { body: JSON.stringify(obj) };
-  if (isStatus304) {
-    res.status = 200;
-  }
+  const resHeaders = Object.assign({}, ($response && $response.headers) || {});
+  Object.keys(resHeaders).forEach(function (key) {
+    const lower = key.toLowerCase();
+    if (lower === 'etag' || lower === 'content-encoding' || lower === 'content-length') {
+      delete resHeaders[key];
+    }
+  });
+  const res = {
+    status: 200,
+    headers: resHeaders,
+    body: JSON.stringify(obj)
+  };
   return res;
 }
 

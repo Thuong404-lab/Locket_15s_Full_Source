@@ -79,7 +79,7 @@
         }
 
         var obj = {};
-        var isRawEmptyOr304 = !$response.body || typeof $response.body !== "string" || $response.body.trim() === "" || $response.status === 304;
+        var isRawEmptyOr304 = !$response.body || typeof $response.body !== "string" || $response.body.trim() === "" || $response.status === 304 || $response.status === "304";
         if (isRawEmptyOr304) {
             obj = { state: "UPDATE", entries: {} };
         } else {
@@ -113,7 +113,7 @@
 
         function groupForKey(key) {
             if (/^(video_sound_enabled|microphone_enabled|camera_microphone_enabled)$/.test(key)) return "audio";
-            if (/^(camera(?:_|$)|video(?:_|$)|longer_video(?:_|$)|max_video_duration$|gold_video_max_duration$|live_photos$|zoom_enabled$|upload_|capture_classification_config$|filters?_|custom_filters)/.test(key)) return "camera";
+            if (/^(camera(?:_|$)|video(?:_|$)|longer_video(?:_|$)|free_video_|default_video_|standard_video_|max_video_duration|gold_video_max_duration|gold_max_duration|live_photos$|zoom_enabled$|upload_|capture_classification_config$|filters?_|custom_filters)/.test(key)) return "camera";
             if (/caption|^overlay/.test(key)) return "captions";
             if (/^widget_|^android_widget_/.test(key)) return "widget";
             if (/^cdn_|^storage_bucket|cache|^use_doc_dir_for_image_cache$|^timestamp_based_history_fetches$|^get_latest_moment|^fetch_|^refresh_interval$|^firestore_refresh|^keychain_access_retries$/.test(key)) return "network";
@@ -303,10 +303,18 @@
             camera_max_duration: "15.0",
             camera_video_max_duration: "15.0",
             max_video_duration: "15.0",
+            gold_video_max_duration: "15.0",
+            free_video_max_duration: "15.0",
+            default_video_max_duration: "15.0",
+            standard_video_max_duration: "15.0",
+            longer_video_duration: "15.0",
+            video_length: "15.0",
+            camera_video_duration: "15.0",
+            camera_longer_video: "true",
+            camera_longer_video_enabled: "true",
             longer_video_enabled: "true",
             video_enabled: "true",
             longer_video: "true",
-            gold_video_max_duration: "15.0",
             upload_main: "true",
             upload_main_image_quality: "0.9",
             upload_main_image_size: "2048",
@@ -910,15 +918,18 @@
             hash ^= rewrittenBody.charCodeAt(i);
             hash = (hash + (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24)) >>> 0;
         }
-        var responseHeaders = Object.assign({}, $response.headers || {});
+        var responseHeaders = Object.assign({}, ($response && $response.headers) || {});
         Object.keys(responseHeaders).forEach(function (key) {
-            if (key.toLowerCase() === "etag") delete responseHeaders[key];
+            var lower = key.toLowerCase();
+            if (lower === "etag" || lower === "content-encoding" || lower === "content-length") {
+                delete responseHeaders[key];
+            }
         });
         responseHeaders.etag = '"locket-v13-' + hash.toString(16) + '"';
         details.push("config-tag=" + hash.toString(16));
         logStatus("response rewritten: " + details.join("; ") + "; device behavior unverified");
         var result = { body: rewrittenBody, headers: responseHeaders };
-        if (isRawEmptyOr304 || $response.status === 304) {
+        if (isRawEmptyOr304 || $response.status === 304 || $response.status === "304" || !$response.status) {
             result.status = 200;
         }
         return result;
