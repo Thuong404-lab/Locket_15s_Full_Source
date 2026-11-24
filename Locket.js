@@ -22,14 +22,15 @@ function rewriteRevenueCatResponse() {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
   }
 
-  const headers = $request.headers || {};
+  const headers = ($request && $request.headers) || {};
   const uaKey = Object.keys(headers).find(key => key.toLowerCase() === 'user-agent');
-  const ua = uaKey ? headers[uaKey] : undefined;
-  if (typeof ua !== 'string' || !ua) return {};
+  const ua = (uaKey && typeof headers[uaKey] === 'string' && headers[uaKey].trim() !== '') ? headers[uaKey] : 'Locket';
 
   let obj;
   const isStatus304 = typeof $response !== 'undefined' && ($response.status === 304 || $response.status === "304");
-  if (isStatus304) {
+  const isRawEmpty = typeof $response === 'undefined' || !$response.body || typeof $response.body !== 'string' || $response.body.trim() === '';
+
+  if (isStatus304 || isRawEmpty) {
     obj = {
       subscriber: {
         subscriptions: {},
@@ -43,12 +44,34 @@ function rewriteRevenueCatResponse() {
     try {
       obj = JSON.parse($response.body);
     } catch (e) {
-      return {};
+      obj = {
+        subscriber: {
+          subscriptions: {},
+          entitlements: {},
+          non_subscriptions: {},
+          original_purchase_date: '2024-01-01T00:00:00Z',
+          original_app_user_id: '$RCAnonymousID:locket_gold'
+        }
+      };
     }
   }
-  if (!isObject(obj) || !isObject(obj.subscriber) ||
-      !isObject(obj.subscriber.subscriptions) || !isObject(obj.subscriber.entitlements)) {
-    return {};
+
+  if (!isObject(obj) || !isObject(obj.subscriber)) {
+    obj = {
+      subscriber: {
+        subscriptions: {},
+        entitlements: {},
+        non_subscriptions: {},
+        original_purchase_date: '2024-01-01T00:00:00Z',
+        original_app_user_id: '$RCAnonymousID:locket_gold'
+      }
+    };
+  }
+  if (!isObject(obj.subscriber.subscriptions)) {
+    obj.subscriber.subscriptions = {};
+  }
+  if (!isObject(obj.subscriber.entitlements)) {
+    obj.subscriber.entitlements = {};
   }
   if (!obj.subscriber.non_subscriptions) {
     obj.subscriber.non_subscriptions = {};

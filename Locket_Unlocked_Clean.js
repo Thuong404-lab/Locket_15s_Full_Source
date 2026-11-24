@@ -79,19 +79,25 @@
         }
 
         var obj = {};
-        var isRawEmptyOr304 = !$response.body || typeof $response.body !== "string" || $response.body.trim() === "" || $response.status === 304 || $response.status === "304";
+        var isRawEmptyOr304 = !$response || !$response.body || typeof $response.body !== "string" || $response.body.trim() === "" || $response.status === 304 || $response.status === "304";
         if (isRawEmptyOr304) {
             obj = { state: "UPDATE", entries: {} };
         } else {
             try {
                 obj = JSON.parse($response.body);
             } catch (e) {
-                logStatus("skipped: response is not JSON");
-                return {};
+                if (diagnosticsEnabled) {
+                    logStatus("skipped: response is not JSON");
+                    return {};
+                }
+                obj = { state: "UPDATE", entries: {} };
             }
             if (!obj || typeof obj !== "object" || Array.isArray(obj) || obj.error) {
-                logStatus("skipped: invalid response or upstream error");
-                return {};
+                if (diagnosticsEnabled) {
+                    logStatus("skipped: invalid response or upstream error");
+                    return {};
+                }
+                obj = { state: "UPDATE", entries: {} };
             }
         }
         // Force full UPDATE with entries required: even when upstream returns

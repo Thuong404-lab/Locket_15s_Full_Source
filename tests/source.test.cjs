@@ -42,7 +42,7 @@ test('compatible module enables all four scripts without template substitution',
   assert.equal(lines.length, 4);
   for (const line of lines) {
     assert.ok(line.includes('argument="enabled=true"'));
-    assert.match(line, /script-path=[^,\s]+\?v=(?:22|23)(?:,|$)/);
+    assert.match(line, /script-path=[^,\s]+\?v=(?:23|24)(?:,|$)/);
     const file = new URL(line.match(/script-path=([^,\s]+)/)[1]).pathname.split('/').pop();
     const argument = line.match(/argument="([^"]+)"/)[1];
     const input = { body: '{"state":"UPDATE","entries":{},"subscriber":{"subscriptions":{},"entitlements":{}}}', requestBody: '{"country_code":"vn"}' };
@@ -344,14 +344,17 @@ test('cached states NO_CHANGE, EMPTY_CONFIG and NO_TEMPLATE are enforced to UPDA
   }
 });
 
-test('upstream errors and invalid arrays pass through safely and produce diagnostics', () => {
+test('upstream errors and invalid arrays in Remote Config are recovered with full 15s camera and captions', () => {
   for (const input of [
     { error: { message: 'mock-upstream-error' } }, [],
   ]) {
     const logs = [];
-    assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body: JSON.stringify(input), logs }), {});
-    assert.ok(logs.some((line) => line.includes('[Locket RC v13] skipped:')));
-    assert.ok(logs.every((line) => !line.includes('mock-upstream-error')));
+    const output = execute('Locket_Unlocked_Clean.js', { body: JSON.stringify(input), logs });
+    assert.equal(output.status, 200);
+    const parsed = JSON.parse(output.body);
+    assert.equal(parsed.state, 'UPDATE');
+    assert.equal(parsed.entries.video_max_duration, '15.0');
+    assert.ok(parsed.entries.overlay_items);
   }
 });
 
@@ -365,12 +368,20 @@ test('malformed streak JSON does not block other camera changes', () => {
   assert.equal(JSON.parse(result.entries.camera).max_duration, 15);
 });
 
-test('robustness: invalid Remote Config JSON must pass through safely', () => {
-  assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body: '<html>error</html>' }), {});
+test('robustness: invalid Remote Config JSON is recovered into full 15s camera and captions', () => {
+  const output = execute('Locket_Unlocked_Clean.js', { body: '<html>error</html>' });
+  assert.equal(output.status, 200);
+  const parsed = JSON.parse(output.body);
+  assert.equal(parsed.state, 'UPDATE');
+  assert.equal(parsed.entries.video_max_duration, '15.0');
 });
 
-test('robustness: null Remote Config response must pass through safely', () => {
-  assert.deepEqual(execute('Locket_Unlocked_Clean.js', { body: 'null' }), {});
+test('robustness: null Remote Config response is recovered into full 15s camera and captions', () => {
+  const output = execute('Locket_Unlocked_Clean.js', { body: 'null' });
+  assert.equal(output.status, 200);
+  const parsed = JSON.parse(output.body);
+  assert.equal(parsed.state, 'UPDATE');
+  assert.equal(parsed.entries.video_max_duration, '15.0');
 });
 
 test('US request rewrite preserves unrelated request fields', () => {
@@ -630,23 +641,37 @@ test('robustness: header rewrite must not leave a differently cased ETag', () =>
   assert.equal(etags[0][1], '');
 });
 
-test('robustness: RevenueCat error response must pass through safely', () => {
-  assert.deepEqual(execute('Locket.js', { body: '{"message":"upstream error"}' }), {});
+test('robustness: RevenueCat error response recovers to active Gold subscriber', () => {
+  const result = execute('Locket.js', { body: '{"message":"upstream error"}' });
+  assert.equal(result.status, 200);
+  const parsed = JSON.parse(result.body);
+  assert.ok(parsed.subscriber.entitlements.Gold);
 });
 
-test('robustness: RevenueCat response without User-Agent must pass through safely', () => {
-  assert.deepEqual(execute('Locket.js', { headers: {}, body: '{"subscriber":{"subscriptions":{},"entitlements":{}}}' }), {});
+test('robustness: RevenueCat response without User-Agent defaults to active Gold', () => {
+  const result = execute('Locket.js', { headers: {}, body: '{"subscriber":{"subscriptions":{},"entitlements":{}}}' });
+  assert.equal(result.status, 200);
+  const parsed = JSON.parse(result.body);
+  assert.ok(parsed.subscriber.entitlements.Gold);
 });
 
-test('RevenueCat invalid JSON and malformed subscriber fields pass through exactly once', () => {
+test('RevenueCat invalid JSON and malformed subscriber fields recover to active Gold subscriber', () => {
   for (const body of [
     '', '<html>error</html>', 'null', '[]', '"text"',
     '{"subscriber":null}', '{"subscriber":[]}', '{"subscriber":{}}',
     '{"subscriber":{"subscriptions":[],"entitlements":{}}}',
     '{"subscriber":{"subscriptions":{},"entitlements":null}}',
-  ]) assert.deepEqual(execute('Locket.js', { body }), {});
+  ]) {
+    const result = execute('Locket.js', { body });
+    assert.equal(result.status, 200);
+    const parsed = JSON.parse(result.body);
+    assert.ok(parsed.subscriber.entitlements.Gold);
+  }
   for (const headers of [null, { 'User-Agent': 42 }, { 'User-Agent': '' }]) {
-    assert.deepEqual(execute('Locket.js', { headers }), {});
+    const result = execute('Locket.js', { headers });
+    assert.equal(result.status, 200);
+    const parsed = JSON.parse(result.body);
+    assert.ok(parsed.subscriber.entitlements.Gold);
   }
 });
 
