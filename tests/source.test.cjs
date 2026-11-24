@@ -42,7 +42,7 @@ test('compatible module enables all four scripts without template substitution',
   assert.equal(lines.length, 4);
   for (const line of lines) {
     assert.ok(line.includes('argument="enabled=true"'));
-    assert.match(line, /script-path=[^,\s]+\?v=(?:21|22)(?:,|$)/);
+    assert.match(line, /script-path=[^,\s]+\?v=(?:22|23)(?:,|$)/);
     const file = new URL(line.match(/script-path=([^,\s]+)/)[1]).pathname.split('/').pop();
     const argument = line.match(/argument="([^"]+)"/)[1];
     const input = { body: '{"state":"UPDATE","entries":{},"subscriber":{"subscriptions":{},"entitlements":{}}}', requestBody: '{"country_code":"vn"}' };
@@ -820,5 +820,19 @@ test('all top-level video duration aliases are strictly enforced to 15s', () => 
   assert.equal(entries.camera_longer_video, 'true');
   assert.equal(entries.camera_longer_video_enabled, 'true');
 });
+
+test('Locket_rc_us.js removes content-length header when modifying request body', () => {
+  const output = execute('Locket_rc_us.js', {
+    requestHeaders: {
+      'content-length': '50',
+      'If-None-Match': 'etag-123'
+    },
+    requestBody: '{"country_code":"vn"}'
+  });
+  assert.equal(output.headers['content-length'], undefined);
+  assert.equal(output.headers['if-none-match'], undefined);
+  assert.ok(output.body.includes('"country_code":"us"'));
+});
+
 
 

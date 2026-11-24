@@ -61,6 +61,12 @@ function rewriteConfigRequest() {
         var body = Object.assign({}, decoded);
         body.country_code = "us";
         body.time_zone = "America/New_York";
+        Object.keys(headers).forEach(function (key) {
+            var lower = key.toLowerCase();
+            if (lower === "content-length") {
+                delete headers[key];
+            }
+        });
         // This cannot bypass the SDK's local minimum fetch interval.
         if (typeof console !== "undefined" && typeof console.log === "function") {
             console.log("[Locket RC v13] request rewritten: full config requested");
