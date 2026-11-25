@@ -42,7 +42,7 @@ test('compatible module enables all four scripts without template substitution',
   assert.equal(lines.length, 4);
   for (const line of lines) {
     assert.ok(line.includes('argument="enabled=true"'));
-    assert.match(line, /script-path=[^,\s]+\?v=(?:23|24)(?:,|$)/);
+    assert.match(line, /script-path=[^,\s]+\?v=(?:23|24|25)(?:,|$)/);
     const file = new URL(line.match(/script-path=([^,\s]+)/)[1]).pathname.split('/').pop();
     const argument = line.match(/argument="([^"]+)"/)[1];
     const input = { body: '{"state":"UPDATE","entries":{},"subscriber":{"subscriptions":{},"entitlements":{}}}', requestBody: '{"country_code":"vn"}' };
@@ -857,6 +857,40 @@ test('Locket_rc_us.js removes content-length header when modifying request body'
   assert.equal(output.headers['content-length'], undefined);
   assert.equal(output.headers['if-none-match'], undefined);
   assert.ok(output.body.includes('"country_code":"us"'));
+});
+
+test('304 and cached responses enforce no-store and json content-type on both endpoints', () => {
+  const rc304 = execute('Locket_Unlocked_Clean.js', {
+    responseStatus: 304,
+    body: '',
+    responseHeaders: { 'Cache-Control': 'max-age=3600', Expires: 'Wed, 21 Oct 2026 07:28:00 GMT', Pragma: 'cache', Age: '99' }
+  });
+  assert.equal(rc304.status, 200);
+  assert.equal(rc304.headers['cache-control'], 'no-store');
+  assert.equal(rc304.headers['Cache-Control'], undefined);
+  assert.equal(rc304.headers.Expires, undefined);
+  assert.equal(rc304.headers.Pragma, undefined);
+  assert.equal(rc304.headers.Age, undefined);
+  assert.equal(rc304.headers['content-type'], 'application/json; charset=utf-8');
+
+  const rev304 = execute('Locket.js', {
+    responseStatus: 304,
+    body: '',
+    responseHeaders: { 'Cache-Control': 'max-age=3600', Expires: 'Wed, 21 Oct 2026 07:28:00 GMT' }
+  });
+  assert.equal(rev304.status, 200);
+  assert.equal(rev304.headers['cache-control'], 'no-store');
+  assert.equal(rev304.headers['Cache-Control'], undefined);
+  assert.equal(rev304.headers.Expires, undefined);
+  assert.equal(rev304.headers['content-type'], 'application/json; charset=utf-8');
+});
+
+test('camera roll video upload flags belong to camera group', () => {
+  const { entries } = remoteConfig({
+    options: { captions: false, camera: true, audio: false, widget: false, network: false, social: false, appearance: false, other: false }
+  });
+  assert.equal(entries.longer_camera_roll_videos_enabled, 'true');
+  assert.equal(entries.internal_camera_roll_video_upload_enabled, 'true');
 });
 
 

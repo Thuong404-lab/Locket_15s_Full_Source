@@ -1,13 +1,13 @@
-#!name = Locket 15s VIP - v24
+#!name = Locket 15s VIP - v25
 #!desc = Mở khóa Locket Gold, video 15s camera và thư viện, 280 caption & hình ảnh chất lượng HD cho Locket Widget.
 #!author = Nguyen Tien Thuong
 #!date = 2026-11-24
 
 [Script]
-http-request ^https:\/\/api\.(revenuecat|rc-backup)\.com(?::443)?\/.+\/(receipts|subscribers) script-path = https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/del_header.js?v=24, timeout = 60, tag = Locket Delete Header
-http-response ^https:\/\/api\.(revenuecat|rc-backup)\.com(?::443)?\/.+\/(receipts|subscribers) script-path = https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket.js?v=24, requires-body = true, timeout = 60, tag = Locket RevenueCat Gold
-http-request ^https:\/\/firebaseremoteconfig\.googleapis\.com(?::443)?\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch script-path = https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_rc_us.js?v=24, requires-body = true, timeout = 10, tag = Locket RC Fetch US
-http-response ^https:\/\/firebaseremoteconfig\.googleapis\.com(?::443)?\/v1\/projects\/locket-4252a\/.+ script-path = https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_Unlocked_Clean.js?v=24, requires-body = true, timeout = 60, tag = Locket Remote Config 15s
+http-request ^https:\/\/api\.(revenuecat|rc-backup)\.com(?::443)?\/.+\/(receipts|subscribers) script-path = https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/del_header.js?v=25, timeout = 60, tag = Locket Delete Header
+http-response ^https:\/\/api\.(revenuecat|rc-backup)\.com(?::443)?\/.+\/(receipts|subscribers) script-path = https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket.js?v=25, requires-body = true, timeout = 60, tag = Locket RevenueCat Gold
+http-request ^https:\/\/firebaseremoteconfig\.googleapis\.com(?::443)?\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch script-path = https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_rc_us.js?v=25, requires-body = true, timeout = 10, tag = Locket RC Fetch US
+http-response ^https:\/\/firebaseremoteconfig\.googleapis\.com(?::443)?\/v1\/projects\/locket-4252a\/.+ script-path = https://raw.githubusercontent.com/Thuong404-lab/Locket_15s_Full_Source/main/Locket_Unlocked_Clean.js?v=25, requires-body = true, timeout = 60, tag = Locket Remote Config 15s
 
 [Mitm]
 hostname = api.revenuecat.com, api.rc-backup.com, firebaseremoteconfig.googleapis.com

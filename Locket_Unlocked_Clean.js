@@ -119,7 +119,7 @@
 
         function groupForKey(key) {
             if (/^(video_sound_enabled|microphone_enabled|camera_microphone_enabled)$/.test(key)) return "audio";
-            if (/^(camera(?:_|$)|video(?:_|$)|longer_video(?:_|$)|free_video_|default_video_|standard_video_|max_video_duration|gold_video_max_duration|gold_max_duration|live_photos$|zoom_enabled$|upload_|capture_classification_config$|filters?_|custom_filters)/.test(key)) return "camera";
+            if (/^(camera(?:_|$)|video(?:_|$)|longer_video(?:_|$)|longer_camera_roll_videos_enabled$|internal_camera_roll_video_upload_enabled$|free_video_|default_video_|standard_video_|max_video_duration|gold_video_max_duration|gold_max_duration|live_photos$|zoom_enabled$|upload_|capture_classification_config$|filters?_|custom_filters)/.test(key)) return "camera";
             if (/caption|^overlay/.test(key)) return "captions";
             if (/^widget_|^android_widget_/.test(key)) return "widget";
             if (/^cdn_|^storage_bucket|cache|^use_doc_dir_for_image_cache$|^timestamp_based_history_fetches$|^get_latest_moment|^fetch_|^refresh_interval$|^firestore_refresh|^keychain_access_retries$/.test(key)) return "network";
@@ -385,13 +385,6 @@
             hide_chat_button: "false",
             groups_enabled: "true",
             groups_feature_mode: "enabled",
-            camera_filter: "false",
-            camera_filters_enabled: "false",
-            camera_filter_enabled: "false",
-            camera_filter_sheet_enabled: "false",
-            camera_filter_picker_enabled: "false",
-            custom_filters_enabled: "false",
-            filters_enabled: "false",
             group_contact_invites_enabled: "true",
             groups_onboarding_accept_invite_preview_enabled: "true",
             chat_hyperlink_enabled_mode: "always_enabled",
@@ -905,14 +898,17 @@
         if (LOCKET_OPTIONS.camera === true) details.push("camera=15s, gallery-video=15s");
         if (LOCKET_OPTIONS.audio === true) details.push("sound=true");
         if (LOCKET_OPTIONS.captions === true) {
-            var captionSections = JSON.parse(obj.entries.overlay_items);
-            var captionCount = captionSections.reduce(function (count, section) { return count + section.items.length; }, 0);
+            var captionCount = 0;
+            var personalCount = 0;
+            var rawOverlay = obj.entries.overlay_items || "";
+            var idMatches = rawOverlay.match(/"overlay_id"\s*:\s*"caption:[^"]*"/g);
+            if (idMatches) {
+                captionCount = idMatches.length;
+                for (var idx = 0; idx < idMatches.length; idx++) {
+                    if (idMatches[idx].indexOf("caption:thuong_men_") >= 0) personalCount++;
+                }
+            }
             details.push("captions=" + captionCount);
-            var personalCount = captionSections.reduce(function (count, section) {
-                return count + section.items.filter(function (item) {
-                    return item.overlay_id.indexOf("caption:thuong_men_") === 0;
-                }).length;
-            }, 0);
             details.push("personal-captions=" + personalCount);
         }
         // The SDK uses response ETags during activation. Identify the rewritten
@@ -925,13 +921,28 @@
             hash = (hash + (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24)) >>> 0;
         }
         var responseHeaders = Object.assign({}, ($response && $response.headers) || {});
+        var hasContentType = false;
         Object.keys(responseHeaders).forEach(function (key) {
             var lower = key.toLowerCase();
-            if (lower === "etag" || lower === "content-encoding" || lower === "content-length") {
+            if (
+                lower === "etag" ||
+                lower === "content-encoding" ||
+                lower === "content-length" ||
+                lower === "cache-control" ||
+                lower === "expires" ||
+                lower === "pragma" ||
+                lower === "age"
+            ) {
                 delete responseHeaders[key];
+            } else if (lower === "content-type") {
+                hasContentType = true;
             }
         });
         responseHeaders.etag = '"locket-v13-' + hash.toString(16) + '"';
+        responseHeaders["cache-control"] = "no-store";
+        if (!hasContentType) {
+            responseHeaders["content-type"] = "application/json; charset=utf-8";
+        }
         details.push("config-tag=" + hash.toString(16));
         logStatus("response rewritten: " + details.join("; ") + "; device behavior unverified");
         var result = { body: rewrittenBody, headers: responseHeaders, status: 200 };

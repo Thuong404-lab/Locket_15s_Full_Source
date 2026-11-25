@@ -134,12 +134,27 @@ function rewriteRevenueCatResponse() {
     });
   }
   const resHeaders = Object.assign({}, ($response && $response.headers) || {});
+  let hasContentType = false;
   Object.keys(resHeaders).forEach(function (key) {
     const lower = key.toLowerCase();
-    if (lower === 'etag' || lower === 'content-encoding' || lower === 'content-length') {
+    if (
+      lower === 'etag' ||
+      lower === 'content-encoding' ||
+      lower === 'content-length' ||
+      lower === 'cache-control' ||
+      lower === 'expires' ||
+      lower === 'pragma' ||
+      lower === 'age'
+    ) {
       delete resHeaders[key];
+    } else if (lower === 'content-type') {
+      hasContentType = true;
     }
   });
+  resHeaders['cache-control'] = 'no-store';
+  if (!hasContentType) {
+    resHeaders['content-type'] = 'application/json; charset=utf-8';
+  }
   const res = {
     status: 200,
     headers: resHeaders,
